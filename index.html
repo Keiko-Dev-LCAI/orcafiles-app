@@ -34,7 +34,8 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
   background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
   padding: 40px 36px; max-width: 560px; width: 100%; box-shadow: 0 8px 48px rgba(0,0,0,0.6);
 }
-.wizard-logo { font-size: 52px; text-align: center; margin-bottom: 8px; }
+.wizard-logo { text-align: center; margin-bottom: 8px; }
+.wizard-logo img { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid var(--accent); }
 .wizard-title { font-size: 26px; font-weight: 800; color: var(--cyan); text-align: center; margin-bottom: 6px; }
 .wizard-sub { font-size: 14px; color: var(--muted); text-align: center; margin-bottom: 28px; line-height: 1.6; }
 .wizard-step { display: none; }
@@ -79,7 +80,8 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
   backdrop-filter: blur(10px);
 }
 .topbar-logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.topbar-logo-icon { font-size: 24px; }
+.topbar-logo-icon { display: inline-flex; align-items: center; }
+.topbar-logo-icon img { width: 30px; height: 30px; object-fit: cover; border-radius: 50%; border: 1px solid var(--accent); }
 .topbar-logo-name { font-size: 18px; font-weight: 800; color: var(--cyan); letter-spacing: -0.3px; }
 .topbar-search {
   flex: 1; max-width: 400px; display: flex; align-items: center; gap: 8px;
@@ -400,7 +402,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div id="wizard">
   <div class="wizard-card">
-    <div class="wizard-logo">🐋</div>
+    <div class="wizard-logo"><img src="orca-icon.png" alt="OrcaFiles"></div>
     <h1 class="wizard-title">OrcaFiles</h1>
     <p class="wizard-sub">Smart file organizer — let's set up your workspace in 30 seconds.</p>
 
@@ -565,7 +567,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
   <!-- TOP BAR -->
   <header id="topbar">
     <div class="topbar-logo">
-      <span class="topbar-logo-icon">🐋</span>
+      <span class="topbar-logo-icon"><img src="orca-icon.png" alt="OrcaFiles"></span>
       <span class="topbar-logo-name">OrcaFiles</span>
     </div>
     <div class="topbar-search">
