@@ -2615,6 +2615,15 @@ function wizardFinish() {
 
 // ── INIT ──────────────────────────────────────────────────────────
 async function init() {
+  // Owner mode URL activation: visiting orcafiles.ai?owner=1 sets permanent Pro
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('owner') === '1') {
+    localStorage.setItem('orcafiles_owner', '1');
+    // Clean URL without reload
+    history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => toast('✅ Owner mode activated — Pro plan unlocked forever.', 'ok', 4000), 1000);
+  }
+
   loadAll();
 
   // Check wizard
