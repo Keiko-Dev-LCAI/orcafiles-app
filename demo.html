@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OrcaFiles v2 — Live Demo</title>
+<style>
+:root {
+  --bg: #0d0d1a;
+  --surface: #0f1828;
+  --surface2: #13203a;
+  --card: #111e33;
+  --border: rgba(255,255,255,0.08);
+  --cyan: #00d4ff;
+  --cyan-dim: rgba(0,212,255,0.12);
+  --cyan-glow: rgba(0,212,255,0.25);
+  --purple: #7c3aed;
+  --purple-dim: rgba(124,58,237,0.15);
+  --green: #00e676;
+  --yellow: #ffaa00;
+  --red: #ff4444;
+  --muted: #6b8099;
+  --text: #e0eaf5;
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 15px; background: var(--bg); color: var(--text); overflow: hidden;
+}
+
+/* ── TOPBAR ── */
+#topbar {
+  position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 200;
+  background: rgba(13,13,26,0.97); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px; padding: 0 20px;
+  backdrop-filter: blur(12px);
+}
+.topbar-logo { display: flex; align-items: center; gap: 10px; }
+.topbar-logo img { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--cyan); object-fit: cover; }
+.topbar-logo-name { font-size: 18px; font-weight: 800; color: var(--cyan); letter-spacing: -0.3px; }
+.topbar-logo-v2 { font-size: 11px; font-weight: 700; color: var(--purple); background: var(--purple-dim); border: 1px solid rgba(124,58,237,0.3); border-radius: 4px; padding: 1px 5px; margin-left: 2px; }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+/* Live Demo pill */
+#live-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3);
+  border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 700; color: var(--green);
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+/* Skip to app */
+#skip-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 7px;
+  padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--text);
+  text-decoration: none; transition: border-color 0.15s, color 0.15s;
+}
+#skip-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+/* ── PROGRESS BAR ── */
+#progress-bar-wrap {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 3px; z-index: 200;
+  background: rgba(255,255,255,0.06);
+}
+#progress-bar {
+  height: 100%; background: linear-gradient(90deg, var(--cyan), var(--purple));
+  width: 0%; transition: width 0.1s linear;
+}
+
+/* ── SCENE CONTAINER ── */
+#scene-wrap {
+  position: fixed; inset: 56px 0 3px 0;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.scene {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+.scene.active { opacity: 1; pointer-events: auto; }
+
+/* ═══════════════════════════════════════════
+   SCENE 1 — HERO
+═══════════════════════════════════════════ */
+#scene-hero {
+  flex-direction: column;
+  background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(0,212,255,0.06) 0%, transparent 70%),
+              radial-gradient(ellipse 50% 40% at 80% 70%, rgba(124,58,237,0.08) 0%, transparent 60%),
+              var(--bg);
+}
+.hero-inner { text-align: center; max-width: 680px; padding: 24px; }
+.hero-logo-wrap {
+  margin-bottom: 24px;
+  animation: hero-float 3s ease-in-out infinite;
+}
+@keyframes hero-float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.hero-logo-img {
+  width: 100px; height: 100px; border-radius: 50%;
+  border: 2.5px solid var(--cyan);
+  box-shadow: 0 0 40px rgba(0,212,255,0.3), 0 0 80px rgba(0,212,255,0.12);
+  object-fit: cover;
+}
+.hero-title {
+  font-size: 44px; font-weight: 900; line-height: 1.1;
+  background: linear-gradient(135deg, #fff 0%, var(--cyan) 55%, var(--purple) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 10px;
+}
+.hero-tagline {
+  font-size: 17px; color: var(--muted); margin-bottom: 6px; font-weight: 500;
+}
+.hero-sub {
+  font-size: 13px; color: rgba(107,128,153,0.8); margin-bottom: 32px; line-height: 1.6;
+}
+.hero-pills {
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 36px;
+}
+.hero-pill {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: var(--text);
+  opacity: 0; transform: translateY(12px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.hero-pill.visible { opacity: 1; transform: translateY(0); }
+.hero-pill:nth-child(1) { border-color: rgba(0,212,255,0.3); color: var(--cyan); }
+.hero-pill:nth-child(2) { border-color: rgba(124,58,237,0.3); color: #a78bfa; }
+.hero-pill:nth-child(3) { border-color: rgba(0,230,118,0.3); color: var(--green); }
+.hero-cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--cyan); color: #000; font-weight: 800; font-size: 15px;
+  padding: 14px 32px; border-radius: 10px; text-decoration: none;
+  box-shadow: 0 0 24px rgba(0,212,255,0.35);
+  transition: box-shadow 0.2s, transform 0.2s;
+  opacity: 0; transform: translateY(10px);
+  animation-fill-mode: forwards;
+}
+.hero-cta.visible { opacity: 1; transform: translateY(0); transition: opacity 0.5s ease 0.6s, transform 0.5s ease 0.6s, box-shadow 0.2s; }
+.hero-cta:hover { box-shadow: 0 0 36px rgba(0,212,255,0.5); transform: translateY(-2px); }
+
+/* ═══════════════════════════════════════════
+   SCENE 2 — SETUP WIZARD
+═══════════════════════════════════════════ */
+#scene-wizard {
+  background: var(--bg);
+}
+.wizard-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+  padding: 36px; max-width: 500px; width: 90%;
+  box-shadow: 0 8px 60px rgba(0,0,0,0.7);
+}
+.wiz-logo { text-align: center; margin-bottom: 6px; }
+.wiz-logo img { width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--cyan); object-fit: cover; }
+.wiz-title { font-size: 22px; font-weight: 800; color: var(--cyan); text-align: center; margin-bottom: 4px; }
+.wiz-sub { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 24px; }
+.wiz-q { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 14px; }
+.wiz-opts { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+.wiz-opt {
+  display: flex; align-items: center; gap: 12px; padding: 13px 15px;
+  background: var(--card); border: 2px solid var(--border); border-radius: 12px;
+  font-size: 14px; cursor: pointer; transition: all 0.25s;
+}
+.wiz-opt.highlight { border-color: rgba(0,212,255,0.5); background: rgba(0,212,255,0.06); }
+.wiz-opt.selected { border-color: var(--cyan); background: var(--cyan-dim); color: var(--cyan); }
+.wiz-opt-icon { font-size: 20px; }
+.wiz-opt-info { flex: 1; }
+.wiz-opt-title { font-weight: 600; font-size: 14px; }
+.wiz-opt-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.wiz-radio {
+  width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--muted);
+  flex-shrink: 0; transition: all 0.2s;
+}
+.wiz-opt.selected .wiz-radio {
+  border-color: var(--cyan); background: var(--cyan);
+  box-shadow: 0 0 8px rgba(0,212,255,0.5);
+}
+.wiz-dots { display: flex; gap: 6px; justify-content: center; }
+.wiz-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--border);
+  transition: all 0.3s;
+}
+.wiz-dot.active { background: var(--cyan); width: 24px; border-radius: 4px; }
+.wiz-dot.done { background: var(--green); }
+
+/* ═══════════════════════════════════════════
+   SCENE 3 — MY FILES
+═══════════════════════════════════════════ */
+#scene-files {
+  align-items: stretch; padding: 20px 24px;
+  background: var(--bg);
+}
+.scene-files-inner {
+  display: flex; width: 100%; max-width: 960px; gap: 0;
+}
+/* mini sidebar */
+.mini-sidebar {
+  width: 200px; flex-shrink: 0; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 14px 0 0 14px;
+  padding: 16px 0; display: flex; flex-direction: column;
+}
+.mini-nav {
+  display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+  font-size: 13px; color: var(--muted); border-left: 3px solid transparent;
+  transition: all 0.15s;
+}
+.mini-nav.active { background: var(--cyan-dim); color: var(--cyan); border-left-color: var(--cyan); }
+.mini-nav-icon { font-size: 15px; width: 18px; text-align: center; }
+/* file area */
+.files-area {
+  flex: 1; background: var(--bg); border: 1px solid var(--border);
+  border-left: none; border-radius: 0 14px 14px 0; padding: 20px;
+  overflow: hidden;
+}
+.files-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.files-title { font-size: 18px; font-weight: 800; color: var(--text); }
+.files-count { font-size: 12px; color: var(--muted); }
+.file-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+}
+.f-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 11px;
+  padding: 14px; display: flex; flex-direction: column; gap: 7px;
+  opacity: 0; transform: scale(0.92) translateY(8px);
+  transition: opacity 0.35s ease, transform 0.35s ease, border-color 0.25s;
+  position: relative; overflow: hidden;
+}
+.f-card.visible { opacity: 1; transform: scale(1) translateY(0); }
+.f-card.highlighted { border-color: var(--cyan); background: var(--cyan-dim); }
+.f-icon { font-size: 26px; }
+.f-name { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.3; word-break: break-all; }
+.f-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; border-radius: 999px;
+  padding: 2px 8px; width: fit-content;
+}
+.f-badge.protected { background: rgba(255,170,0,0.15); color: var(--yellow); }
+.f-badge.backed { background: rgba(0,230,118,0.15); color: var(--green); }
+.f-badge.organize { background: rgba(0,212,255,0.12); color: var(--cyan); }
+.f-badge.encrypted { background: rgba(0,230,118,0.12); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+.f-tags {
+  display: flex; flex-wrap: wrap; gap: 3px;
+  min-height: 18px;
+}
+.f-tag {
+  font-size: 10px; color: rgba(124,58,237,0.9); background: rgba(124,58,237,0.12);
+  border: 1px solid rgba(124,58,237,0.25); border-radius: 4px; padding: 1px 5px;
+  opacity: 0; transform: scale(0.8);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.f-tag.visible { opacity: 1; transform: scale(1); }
+
+/* AI Tagging overlay */
+#tagging-overlay {
+  position: absolute; inset: 0;
+  background: rgba(13,13,26,0.8); backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 11px; opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: 10;
+}
+#tagging-overlay.visible { opacity: 1; }
+.tagging-spinner {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.tagging-spin-icon { font-size: 28px; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.tagging-label { font-size: 13px; font-weight: 700; color: var(--cyan); }
+
+/* ═══════════════════════════════════════════
+   SCENE 4 — AI PANEL
+═══════════════════════════════════════════ */
+#scene-ai {
+  align-items: stretch; padding: 20px 24px; background: var(--bg); position: relative;
+}
+.scene-ai-inner {
+  display: flex; width: 100%; max-width: 960px; gap: 0; position: relative; height: 100%;
+}
+/* Reuse file grid but dimmed */
+.ai-files-area {
+  flex: 1; padding: 20px; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 14px;
+  overflow: hidden; position: relative;
+}
+/* AI floating panel */
+#ai-panel {
+  position: absolute; bottom: 20px; right: 0px;
+  width: 320px; background: var(--surface); border: 1px solid rgba(0,212,255,0.3);
+  border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 20px rgba(0,212,255,0.08);
+  overflow: hidden;
+  transform: translateY(120%); opacity: 0;
+  transition: transform 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.4s ease;
+}
+#ai-panel.open { transform: translateY(0); opacity: 1; }
+.ai-panel-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; background: rgba(0,212,255,0.06);
+  border-bottom: 1px solid var(--border);
+}
+.ai-panel-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); animation: pulse-dot 1.4s ease-in-out infinite; }
+.ai-panel-title { font-size: 13px; font-weight: 700; color: var(--cyan); }
+.ai-panel-sub { font-size: 11px; color: var(--muted); margin-left: auto; }
+.ai-messages { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.ai-msg {
+  display: flex; gap: 8px; opacity: 0; transform: translateY(8px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.ai-msg.visible { opacity: 1; transform: translateY(0); }
+.ai-msg-avatar {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 13px;
+}
+.ai-msg-avatar.user { background: var(--purple-dim); border: 1px solid rgba(124,58,237,0.4); }
+.ai-msg-avatar.ai { background: var(--cyan-dim); border: 1px solid rgba(0,212,255,0.4); }
+.ai-msg-bubble {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 8px 11px; font-size: 12px; line-height: 1.5; max-width: 220px;
+}
+.ai-msg.user .ai-msg-bubble { background: var(--purple-dim); border-color: rgba(124,58,237,0.3); color: #c4b5fd; }
+.ai-cursor {
+  display: inline-block; width: 2px; height: 12px;
+  background: var(--cyan); margin-left: 1px; vertical-align: text-bottom;
+  animation: blink 0.8s step-end infinite;
+}
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* ═══════════════════════════════════════════
+   SCENE 5 — ENCRYPTION
+═══════════════════════════════════════════ */
+#scene-encrypt {
+  flex-direction: column; gap: 0; background: var(--bg);
+}
+.encrypt-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+  padding: 36px; max-width: 440px; width: 90%; text-align: center;
+  box-shadow: 0 8px 60px rgba(0,0,0,0.7);
+}
+.encrypt-file-icon { font-size: 52px; margin-bottom: 14px; }
+.encrypt-file-name { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.encrypt-file-size { font-size: 12px; color: var(--muted); margin-bottom: 28px; }
+.encrypt-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 700; border-radius: 8px; padding: 8px 16px;
+  margin-bottom: 24px; transition: all 0.4s ease;
+}
+.encrypt-badge.pending { background: rgba(255,170,0,0.15); color: var(--yellow); border: 1px solid rgba(255,170,0,0.3); }
+.encrypt-badge.encrypting { background: rgba(0,212,255,0.1); color: var(--cyan); border: 1px solid rgba(0,212,255,0.3); }
+.encrypt-badge.done { background: rgba(0,230,118,0.12); color: var(--green); border: 1px solid rgba(0,230,118,0.35); }
+.encrypt-progress-wrap {
+  background: rgba(255,255,255,0.06); border-radius: 999px; height: 6px;
+  overflow: hidden; margin-bottom: 12px;
+}
+.encrypt-progress-bar {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--cyan), var(--purple));
+  width: 0%; transition: width 1.8s cubic-bezier(0.4,0,0.2,1);
+}
+.encrypt-progress-label { font-size: 12px; color: var(--muted); }
+.encrypt-click-hint {
+  font-size: 12px; color: var(--muted); margin-bottom: 18px;
+  animation: hint-pulse 1.5s ease-in-out infinite;
+}
+@keyframes hint-pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+/* Animated click ripple */
+.click-ripple {
+  position: absolute; width: 50px; height: 50px; border-radius: 50%;
+  background: rgba(0,212,255,0.25); pointer-events: none;
+  animation: ripple-out 0.6s ease-out forwards;
+  transform: translate(-50%, -50%);
+}
+@keyframes ripple-out {
+  0% { transform: translate(-50%,-50%) scale(0); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(3); opacity: 0; }
+}
+
+/* ── SCENE LABEL ── */
+.scene-label {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  background: rgba(13,13,26,0.85); border: 1px solid var(--border);
+  border-radius: 999px; padding: 4px 14px; font-size: 11px; font-weight: 700;
+  color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase;
+  white-space: nowrap; backdrop-filter: blur(8px);
+}
+
+/* ── GLOW BG PARTICLES ── */
+.glow-bg {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+}
+.glow-orb {
+  position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.12;
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="topbar-logo">
+    <img src="orca-icon.png" alt="OrcaFiles" onerror="this.style.display='none'">
+    <span class="topbar-logo-name">OrcaFiles</span>
+    <span class="topbar-logo-v2">v2</span>
+  </div>
+  <div class="topbar-right">
+    <div id="live-pill">
+      <div class="live-dot"></div>
+      LIVE DEMO
+    </div>
+    <a id="skip-btn" href="index.html">Skip to App →</a>
+  </div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div id="progress-bar-wrap">
+  <div id="progress-bar"></div>
+</div>
+
+<!-- SCENES -->
+<div id="scene-wrap">
+
+  <!-- SCENE 1: HERO -->
+  <div class="scene active" id="scene-hero">
+    <div class="glow-bg">
+      <div class="glow-orb" style="width:500px;height:500px;background:var(--cyan);top:-100px;left:calc(50% - 250px);"></div>
+      <div class="glow-orb" style="width:400px;height:400px;background:var(--purple);bottom:-80px;right:-80px;"></div>
+    </div>
+    <div class="scene-label">✦ Welcome</div>
+    <div class="hero-inner">
+      <div class="hero-logo-wrap">
+        <img class="hero-logo-img" src="orca-icon.png" alt="OrcaFiles"
+             onerror="this.outerHTML='<div style=\'width:100px;height:100px;border-radius:50%;border:2.5px solid var(--cyan);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:40px;box-shadow:0 0 40px rgba(0,212,255,0.3)\'>🐋</div>'">
+      </div>
+      <div class="hero-title">OrcaFiles</div>
+      <div class="hero-tagline">Smart file organizer powered by Lightchain AI</div>
+      <div class="hero-sub">No server. No uploads. Your files stay on YOUR computer.</div>
+      <div class="hero-pills">
+        <div class="hero-pill" id="pill-1">🔒 AES-256 Encryption</div>
+        <div class="hero-pill" id="pill-2">🤖 AI Tagging</div>
+        <div class="hero-pill" id="pill-3">☁️ Cloud Backup</div>
+      </div>
+      <a class="hero-cta" id="hero-cta" href="index.html">Launch App →</a>
+    </div>
+  </div>
+
+  <!-- SCENE 2: SETUP WIZARD -->
+  <div class="scene" id="scene-wizard">
+    <div class="scene-label">⚙️ Setup Wizard</div>
+    <div class="wizard-card">
+      <div class="wiz-logo">
+        <img src="orca-icon.png" alt="OrcaFiles" onerror="this.outerHTML='<span style=\'font-size:40px\'>🐋</span>'">
+      </div>
+      <div class="wiz-title">Welcome to OrcaFiles</div>
+      <div class="wiz-sub">Let's personalize your experience in 3 quick steps.</div>
+      <div class="wiz-q">What will you use OrcaFiles for?</div>
+      <div class="wiz-opts">
+        <div class="wiz-opt" id="wiz-opt-1">
+          <span class="wiz-opt-icon">🏠</span>
+          <div class="wiz-opt-info">
+            <div class="wiz-opt-title">Personal / Home Office</div>
+            <div class="wiz-opt-sub">Organize personal docs, photos & backups</div>
+          </div>
+          <div class="wiz-radio"></div>
+        </div>
+        <div class="wiz-opt" id="wiz-opt-2">
+          <span class="wiz-opt-icon">💼</span>
+          <div class="wiz-opt-info">
+            <div class="wiz-opt-title">Business / Professional</div>
+            <div class="wiz-opt-sub">Team files, contracts & secure storage</div>
+          </div>
+          <div class="wiz-radio"></div>
+        </div>
+        <div class="wiz-opt" id="wiz-opt-3">
+          <span class="wiz-opt-icon">🎓</span>
+          <div class="wiz-opt-info">
+            <div class="wiz-opt-title">Student / Academic</div>
+            <div class="wiz-opt-sub">Assignments, research & study materials</div>
+          </div>
+          <div class="wiz-radio"></div>
+        </div>
+      </div>
+      <div class="wiz-dots">
+        <div class="wiz-dot active" id="wdot-1"></div>
+        <div class="wiz-dot" id="wdot-2"></div>
+        <div class="wiz-dot" id="wdot-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 3 + 4 combined: MY FILES + AI TAGGING -->
+  <div class="scene" id="scene-files" style="padding:20px 24px;background:var(--bg);align-items:flex-start;justify-content:center;">
+    <div class="scene-label" id="files-label">📁 My Files</div>
+    <div class="scene-files-inner" style="max-width:860px;width:100%;margin-top:32px;">
+      <!-- Mini sidebar -->
+      <div class="mini-sidebar">
+        <div class="mini-nav active"><span class="mini-nav-icon">📁</span> My Files</div>
+        <div class="mini-nav"><span class="mini-nav-icon">⭐</span> Starred</div>
+        <div class="mini-nav"><span class="mini-nav-icon">🔒</span> Protected</div>
+        <div class="mini-nav"><span class="mini-nav-icon">☁️</span> Cloud Backup</div>
+        <div class="mini-nav"><span class="mini-nav-icon">🤖</span> AI Tags</div>
+        <div class="mini-nav"><span class="mini-nav-icon">🗑️</span> Trash</div>
+      </div>
+      <!-- File area -->
+      <div class="files-area" style="position:relative;">
+        <div class="files-header">
+          <div class="files-title">My Files</div>
+          <div class="files-count">6 files</div>
+        </div>
+        <div class="file-grid" id="file-grid-main">
+          <!-- File cards injected by JS -->
+        </div>
+        <!-- AI Tagging overlay (positioned over file grid) -->
+        <div id="tagging-overlay">
+          <div class="tagging-spinner">
+            <div class="tagging-spin-icon">✨</div>
+            <div class="tagging-label">AI Tagging...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 5: AI PANEL (shares same file grid look) -->
+  <div class="scene" id="scene-ai" style="padding:20px 24px;background:var(--bg);align-items:flex-start;justify-content:center;">
+    <div class="scene-label">🤖 AI Assistant</div>
+    <div style="max-width:860px;width:100%;margin-top:32px;display:flex;gap:0;position:relative;flex:1;height:calc(100% - 60px);">
+      <!-- Mini sidebar -->
+      <div class="mini-sidebar">
+        <div class="mini-nav active"><span class="mini-nav-icon">📁</span> My Files</div>
+        <div class="mini-nav"><span class="mini-nav-icon">⭐</span> Starred</div>
+        <div class="mini-nav"><span class="mini-nav-icon">🔒</span> Protected</div>
+        <div class="mini-nav"><span class="mini-nav-icon">☁️</span> Cloud Backup</div>
+        <div class="mini-nav"><span class="mini-nav-icon">🤖</span> AI Tags</div>
+      </div>
+      <!-- File area (static, with tagged files) -->
+      <div class="files-area" style="position:relative;">
+        <div class="files-header">
+          <div class="files-title">My Files</div>
+          <div class="files-count">6 files — tagged</div>
+        </div>
+        <div class="file-grid" id="file-grid-ai">
+          <!-- Injected by JS -->
+        </div>
+        <!-- AI floating panel -->
+        <div id="ai-panel">
+          <div class="ai-panel-header">
+            <div class="ai-panel-dot"></div>
+            <div class="ai-panel-title">Orca AI</div>
+            <div class="ai-panel-sub">Lightchain AI</div>
+          </div>
+          <div class="ai-messages" id="ai-messages">
+            <!-- Messages injected -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 6: ENCRYPTION -->
+  <div class="scene" id="scene-encrypt">
+    <div class="glow-bg">
+      <div class="glow-orb" style="width:350px;height:350px;background:var(--cyan);top:50%;left:50%;transform:translate(-50%,-50%);"></div>
+    </div>
+    <div class="scene-label">🔒 Encryption</div>
+    <div class="encrypt-card" id="encrypt-card">
+      <div class="encrypt-file-icon">🔑</div>
+      <div class="encrypt-file-name">Passwords_Vault.txt</div>
+      <div class="encrypt-file-size">2.4 KB · plain text</div>
+      <div class="encrypt-click-hint" id="enc-hint">🖱️ Click to encrypt...</div>
+      <div class="encrypt-badge pending" id="enc-badge">🔒 Protected</div>
+      <div class="encrypt-progress-wrap">
+        <div class="encrypt-progress-bar" id="enc-bar"></div>
+      </div>
+      <div class="encrypt-progress-label" id="enc-label">Ready to encrypt</div>
+    </div>
+  </div>
+
+</div><!-- /scene-wrap -->
+
+<script>
+// ────────────────────────────────────────────────
+// DATA
+// ────────────────────────────────────────────────
+const FILES = [
+  { icon: '📄', name: 'Tax_Return_2025.pdf',    badge: 'protected', badgeText: '🟡 Protected',          tags: ['#finance', '#2025', '#taxes'],  id: 'f0' },
+  { icon: '🖼️', name: 'Family_Photos_2024.zip', badge: 'backed',    badgeText: '🟢 Backed Up',           tags: ['#personal', '#memories'],        id: 'f1' },
+  { icon: '📝', name: 'Business_Plan.docx',     badge: 'organize',  badgeText: '🔵 Organize Only',       tags: ['#work', '#planning'],            id: 'f2' },
+  { icon: '🔑', name: 'Passwords_Vault.txt',   badge: 'protected', badgeText: '🟡 Protected',           tags: [],                                id: 'f3' },
+  { icon: '📊', name: 'Budget_Q1.xlsx',         badge: 'backed',    badgeText: '🟢 Backed Up',           tags: ['#finance', '#budget'],           id: 'f4' },
+  { icon: '🎬', name: 'Vacation_Video.mp4',     badge: 'organize',  badgeText: '🔵 Organize Only',       tags: ['#personal', '#travel'],          id: 'f5' },
+];
+
+function buildFileCard(f, showTags) {
+  return `
+    <div class="f-card" id="${f.id}">
+      <div class="f-icon">${f.icon}</div>
+      <div class="f-name">${f.name}</div>
+      <div class="f-badge ${f.badge}">${f.badgeText}</div>
+      <div class="f-tags">
+        ${showTags ? f.tags.map(t => `<span class="f-tag">${t}</span>`).join('') : ''}
+      </div>
+    </div>`;
+}
+
+// Build file grids
+document.getElementById('file-grid-main').innerHTML = FILES.map(f => buildFileCard(f, true)).join('');
+document.getElementById('file-grid-ai').innerHTML = FILES.map(f => buildFileCard(f, true)).join('');
+
+// Prefix AI grid IDs
+document.querySelectorAll('#file-grid-ai .f-card').forEach((el, i) => {
+  el.id = 'af' + i;
+});
+
+// ────────────────────────────────────────────────
+// SCENE SEQUENCER
+// ────────────────────────────────────────────────
+const SCENES = [
+  { id: 'scene-hero',    duration: 5500, label: 'Hero' },
+  { id: 'scene-wizard',  duration: 4500, label: 'Wizard' },
+  { id: 'scene-files',   duration: 9500, label: 'Files + Tagging' },
+  { id: 'scene-ai',      duration: 6000, label: 'AI Panel' },
+  { id: 'scene-encrypt', duration: 5500, label: 'Encryption' },
+];
+
+let currentScene = 0;
+let loopStart = Date.now();
+const TOTAL_DURATION = SCENES.reduce((a, s) => a + s.duration, 0);
+
+function showScene(idx) {
+  const allScenes = document.querySelectorAll('.scene');
+  allScenes.forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(SCENES[idx].id);
+  if (el) el.classList.add('active');
+}
+
+function runScene(idx) {
+  currentScene = idx;
+  showScene(idx);
+  SCENE_RUNNERS[SCENES[idx].id] && SCENE_RUNNERS[idx]();
+  setTimeout(() => {
+    runScene((idx + 1) % SCENES.length);
+    if ((idx + 1) % SCENES.length === 0) loopStart = Date.now();
+  }, SCENES[idx].duration);
+}
+
+// Progress bar
+function tickProgress() {
+  const elapsed = Date.now() - loopStart;
+  const pct = Math.min((elapsed / TOTAL_DURATION) * 100, 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  requestAnimationFrame(tickProgress);
+}
+requestAnimationFrame(tickProgress);
+
+// ────────────────────────────────────────────────
+// SCENE RUNNERS
+// ────────────────────────────────────────────────
+const SCENE_RUNNERS = {};
+
+// SCENE 0 — HERO
+SCENE_RUNNERS[0] = function() {
+  // Reset
+  ['pill-1','pill-2','pill-3'].forEach(id => document.getElementById(id).classList.remove('visible'));
+  document.getElementById('hero-cta').classList.remove('visible');
+
+  setTimeout(() => document.getElementById('pill-1').classList.add('visible'), 600);
+  setTimeout(() => document.getElementById('pill-2').classList.add('visible'), 950);
+  setTimeout(() => document.getElementById('pill-3').classList.add('visible'), 1300);
+  setTimeout(() => document.getElementById('hero-cta').classList.add('visible'), 2000);
+};
+
+// SCENE 1 — WIZARD
+SCENE_RUNNERS[1] = function() {
+  const opts = ['wiz-opt-1','wiz-opt-2','wiz-opt-3'];
+  opts.forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('selected','highlight');
+  });
+  ['wdot-1','wdot-2','wdot-3'].forEach((id,i) => {
+    const d = document.getElementById(id);
+    d.className = 'wiz-dot' + (i === 0 ? ' active' : '');
+  });
+
+  // Hover effect
+  setTimeout(() => document.getElementById('wiz-opt-1').classList.add('highlight'), 700);
+  // Click select
+  setTimeout(() => {
+    document.getElementById('wiz-opt-1').classList.remove('highlight');
+    document.getElementById('wiz-opt-1').classList.add('selected');
+  }, 1600);
+  // Progress dots advance
+  setTimeout(() => {
+    document.getElementById('wdot-1').className = 'wiz-dot done';
+    document.getElementById('wdot-2').className = 'wiz-dot active';
+  }, 2800);
+  setTimeout(() => {
+    document.getElementById('wdot-2').className = 'wiz-dot done';
+    document.getElementById('wdot-3').className = 'wiz-dot active';
+  }, 3600);
+};
+
+// SCENE 2 — FILES + TAGGING
+SCENE_RUNNERS[2] = function() {
+  // Reset cards
+  const grid = document.getElementById('file-grid-main');
+  const cards = grid.querySelectorAll('.f-card');
+  cards.forEach(c => {
+    c.classList.remove('visible','highlighted');
+    c.querySelectorAll('.f-tag').forEach(t => t.classList.remove('visible'));
+  });
+  document.getElementById('tagging-overlay').classList.remove('visible');
+  document.getElementById('files-label').textContent = '📁 My Files';
+
+  // Fade in cards one by one
+  cards.forEach((c, i) => {
+    setTimeout(() => c.classList.add('visible'), 200 + i * 260);
+  });
+
+  // Show tagging overlay
+  setTimeout(() => {
+    document.getElementById('files-label').textContent = '✨ AI Tagging';
+    document.getElementById('tagging-overlay').classList.add('visible');
+  }, 3800);
+
+  // Hide overlay & pop tags
+  setTimeout(() => {
+    document.getElementById('tagging-overlay').classList.remove('visible');
+    document.getElementById('files-label').textContent = '🏷️ Tags Applied';
+    // Show tags on first 3 files
+    [0,1,2].forEach(fi => {
+      const card = cards[fi];
+      const tags = card.querySelectorAll('.f-tag');
+      tags.forEach((t, ti) => {
+        setTimeout(() => t.classList.add('visible'), fi * 150 + ti * 100);
+      });
+    });
+  }, 5600);
+};
+
+// SCENE 3 — AI PANEL
+SCENE_RUNNERS[3] = function() {
+  // Show all cards with tags visible in AI grid
+  const aiCards = document.querySelectorAll('#file-grid-ai .f-card');
+  aiCards.forEach(c => {
+    c.classList.add('visible');
+    c.querySelectorAll('.f-tag').forEach(t => t.classList.add('visible'));
+    c.classList.remove('highlighted');
+  });
+
+  // Reset AI panel
+  const panel = document.getElementById('ai-panel');
+  panel.classList.remove('open');
+  document.getElementById('ai-messages').innerHTML = '';
+
+  // Open AI panel
+  setTimeout(() => panel.classList.add('open'), 500);
+
+  // User message
+  setTimeout(() => {
+    const msgs = document.getElementById('ai-messages');
+    const umsg = document.createElement('div');
+    umsg.className = 'ai-msg user';
+    umsg.innerHTML = `<div class="ai-msg-avatar user">👤</div><div class="ai-msg-bubble">Find my finance files</div>`;
+    msgs.appendChild(umsg);
+    setTimeout(() => umsg.classList.add('visible'), 50);
+  }, 1400);
+
+  // AI typing response
+  setTimeout(() => {
+    const msgs = document.getElementById('ai-messages');
+    const amsg = document.createElement('div');
+    amsg.className = 'ai-msg ai';
+    amsg.innerHTML = `<div class="ai-msg-avatar ai">🐋</div><div class="ai-msg-bubble" id="ai-typing-bubble"><span class="ai-cursor"></span></div>`;
+    msgs.appendChild(amsg);
+    setTimeout(() => amsg.classList.add('visible'), 50);
+
+    const fullText = `Found 2 files tagged #finance: Tax_Return_2025.pdf and Budget_Q1.xlsx`;
+    let i = 0;
+    const bubble = document.getElementById('ai-typing-bubble');
+    const cursor = bubble.querySelector('.ai-cursor');
+    const interval = setInterval(() => {
+      if (i >= fullText.length) { clearInterval(interval); return; }
+      bubble.insertBefore(document.createTextNode(fullText[i]), cursor);
+      i++;
+    }, 28);
+  }, 2500);
+
+  // Highlight finance files
+  setTimeout(() => {
+    // File 0 = Tax_Return (finance), File 4 = Budget_Q1 (finance)
+    [0, 4].forEach(fi => {
+      aiCards[fi] && aiCards[fi].classList.add('highlighted');
+    });
+  }, 4200);
+};
+
+// SCENE 4 — ENCRYPTION
+SCENE_RUNNERS[4] = function() {
+  const badge = document.getElementById('enc-badge');
+  const bar = document.getElementById('enc-bar');
+  const label = document.getElementById('enc-label');
+  const hint = document.getElementById('enc-hint');
+  const card = document.getElementById('encrypt-card');
+
+  // Reset
+  badge.className = 'encrypt-badge pending';
+  badge.textContent = '🔒 Protected';
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+  label.textContent = 'Ready to encrypt';
+  hint.style.display = 'block';
+
+  // Click animation
+  setTimeout(() => {
+    // Add ripple
+    const ripple = document.createElement('div');
+    ripple.className = 'click-ripple';
+    ripple.style.left = '50%';
+    ripple.style.top = '55%';
+    ripple.style.position = 'absolute';
+    card.style.position = 'relative';
+    card.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 700);
+
+    hint.style.display = 'none';
+    badge.className = 'encrypt-badge encrypting';
+    badge.textContent = '🔒 Encrypting...';
+    label.textContent = 'Applying AES-256 encryption...';
+    // Start bar
+    requestAnimationFrame(() => {
+      bar.style.transition = 'width 1.8s cubic-bezier(0.4,0,0.2,1)';
+      bar.style.width = '100%';
+    });
+  }, 1200);
+
+  // Done
+  setTimeout(() => {
+    badge.className = 'encrypt-badge done';
+    badge.textContent = '✅ AES-256 Encrypted';
+    label.textContent = 'File encrypted successfully';
+  }, 3200);
+};
+
+// Map SCENE_RUNNERS by index to id for clarity — already using index, good.
+
+// ────────────────────────────────────────────────
+// START
+// ────────────────────────────────────────────────
+loopStart = Date.now();
+SCENE_RUNNERS[0]();
+setTimeout(() => runScene(1), SCENES[0].duration);
+</script>
+</body>
+</html>
