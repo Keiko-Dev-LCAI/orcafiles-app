@@ -302,15 +302,27 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 #toast.ok { border-color: rgba(0,230,118,0.4); color: var(--green); }
 #toast.err { border-color: rgba(255,68,68,0.4); color: var(--red); }
 
-/* ── CLOUD BACKUP ───────────────────────────────────────────────── */
-.cloud-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; }
-.cloud-btn-card {
-  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-  padding: 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px;
+/* ── LOCAL BACKUP ───────────────────────────────────────────────── */
+.backup-hero {
+  background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(0,230,118,0.05));
+  border: 1px solid rgba(0,212,255,0.2); border-radius: 16px;
+  padding: 32px; text-align: center; margin-bottom: 20px;
 }
-.cloud-btn-card .cloud-icon { font-size: 40px; }
-.cloud-btn-card .cloud-name { font-size: 15px; font-weight: 700; color: var(--text); }
-.cloud-btn-card .cloud-soon { font-size: 11px; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 2px 8px; }
+.backup-hero-icon { font-size: 52px; margin-bottom: 12px; }
+.backup-hero-title { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+.backup-hero-sub { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
+.backup-tip-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-top: 8px; }
+.backup-tip {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 12px; text-align: center; font-size: 12px; color: var(--muted); line-height: 1.5;
+}
+.backup-tip .tip-icon { font-size: 24px; display: block; margin-bottom: 6px; }
+.backup-tip strong { color: var(--text); display: block; margin-bottom: 4px; }
+#backup-status-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+.backup-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.backup-stat-row:last-child { border-bottom: none; }
+.backup-stat-label { color: var(--muted); }
+.backup-stat-val { color: var(--text); font-weight: 600; }
 
 /* ── SETTINGS ───────────────────────────────────────────────────── */
 .settings-section { margin-bottom: 28px; }
@@ -723,10 +735,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 
       <div class="nav-section-label" style="margin-top:12px;">Backup</div>
       <div class="nav-item" onclick="showPage('backup')">
-        <span class="nav-icon">⬆️</span><span class="nav-label">Backup Now</span>
-      </div>
-      <div class="nav-item" onclick="showPage('backup')">
-        <span class="nav-icon">⬇️</span><span class="nav-label">Restore Files</span>
+        <span class="nav-icon">💾</span><span class="nav-label">Backup &amp; Restore</span>
       </div>
 
       <div class="nav-section-label" style="margin-top:12px;">Account</div>
@@ -803,33 +812,61 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
         <div id="encrypted-list"></div>
       </div>
 
-      <!-- ─── CLOUD BACKUP ──────────────────────────────────────── -->
+      <!-- ─── LOCAL BACKUP ──────────────────────────────────────── -->
       <div class="page" id="page-backup">
         <div class="page-header">
-          <h1 class="page-title">☁️ Cloud Backup</h1>
-          <p class="page-sub">Connect a cloud provider to automatically sync your encrypted files.</p>
+          <h1 class="page-title">💾 Backup Files</h1>
+          <p class="page-sub">Copy your files to any folder — internal drive, external HD, or thumb drive.</p>
         </div>
-        <div class="info-box" style="margin-bottom:20px;">
-          <strong>🔐 Privacy-first backup</strong> — Your files are encrypted in your browser before upload.
-          We never see your data. Cloud providers only store encrypted blobs.
-        </div>
-        <div class="cloud-grid">
-          <div class="cloud-btn-card">
-            <div class="cloud-icon">📁</div>
-            <div class="cloud-name">Google Drive</div>
-            <span class="cloud-soon">Coming Soon</span>
-            <button class="btn btn-secondary btn-sm" disabled>Connect Google Drive</button>
+
+        <div class="backup-hero">
+          <div class="backup-hero-icon">💾</div>
+          <div class="backup-hero-title">Back Up to Any Drive</div>
+          <div class="backup-hero-sub">
+            Click <strong>Back Up Now</strong> and pick a destination folder. OrcaFiles copies all your files there,
+            along with a catalog file so you can restore later. Works with your internal hard drive, an external drive,
+            or a thumb/USB drive — anything your browser can see.
           </div>
-          <div class="cloud-btn-card">
-            <div class="cloud-icon">☁️</div>
-            <div class="cloud-name">OneDrive</div>
-            <span class="cloud-soon">Coming Soon</span>
-            <button class="btn btn-secondary btn-sm" disabled>Connect OneDrive</button>
+          <button class="btn btn-primary" style="font-size:15px;padding:12px 32px;" onclick="backupToFolder()">💾 Back Up Now</button>
+        </div>
+
+        <div class="backup-tip-grid" style="margin-bottom:20px;">
+          <div class="backup-tip">
+            <span class="tip-icon">🖥️</span>
+            <strong>Internal Drive</strong>
+            Good for quick access. Also keep a second copy off your computer.
+          </div>
+          <div class="backup-tip">
+            <span class="tip-icon">🔌</span>
+            <strong>External HD</strong>
+            Best for large file collections. Unplug and store safely.
+          </div>
+          <div class="backup-tip">
+            <span class="tip-icon">🟦</span>
+            <strong>Thumb Drive</strong>
+            Portable. Carry it with you or store it in a safe place.
           </div>
         </div>
-        <div class="card" style="margin-top:20px;">
-          <div class="card-title">📊 Backup Status</div>
-          <p style="font-size:13px;color:var(--muted);">No cloud provider connected yet. Connect Google Drive or OneDrive above to enable automatic encrypted backup.</p>
+
+        <div id="backup-status-card">
+          <div class="card-title" style="margin-bottom:12px;">📊 Backup Status</div>
+          <div class="backup-stat-row">
+            <span class="backup-stat-label">Files in catalog</span>
+            <span class="backup-stat-val" id="bkp-stat-total">—</span>
+          </div>
+          <div class="backup-stat-row">
+            <span class="backup-stat-label">Files with folder access</span>
+            <span class="backup-stat-val" id="bkp-stat-accessible">—</span>
+          </div>
+          <div class="backup-stat-row">
+            <span class="backup-stat-label">Last backup</span>
+            <span class="backup-stat-val" id="bkp-stat-last">Never</span>
+          </div>
+        </div>
+
+        <div class="info-box" style="margin-top:20px;">
+          <strong>💡 Tip:</strong> After backing up to a thumb drive, you can drag that folder into Google Drive,
+          Dropbox, or any cloud service yourself — no accounts needed inside OrcaFiles.
         </div>
       </div>
 
@@ -970,7 +1007,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
                 <tr><td class="feat">AES-256 encryption</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
                 <tr><td class="feat">AI auto-tagging</td><td class="no">5 uses</td><td class="yes">Unlimited</td><td class="yes">Unlimited</td><td class="yes">✓</td></tr>
                 <tr><td class="feat">Ask Keiko AI chat</td><td class="no">5 uses</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
-                <tr><td class="feat">Cloud backup</td><td class="no">Soon</td><td class="no">Soon</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                <tr><td class="feat">Local backup (any drive)</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
                 <tr><td class="feat">Watch Folders</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td></tr>
                 <tr><td class="feat">Training Module</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td></tr>
                 <tr><td class="feat">Multi-user / team</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
@@ -1016,7 +1053,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
   <div class="ctx-item" onclick="ctxAction('encrypt')">🔒 Encrypt File</div>
   <div class="ctx-item" onclick="ctxAction('tag')">🏷️ Add Tags</div>
   <div class="ctx-item" onclick="ctxAction('aitag')">🤖 AI Tag</div>
-  <div class="ctx-item" onclick="ctxAction('backup')">☁️ Add to Backup</div>
+  <div class="ctx-item" onclick="closeContextMenu();backupToFolder()">💾 Back Up All Files</div>
   <div class="ctx-sep"></div>
   <div class="ctx-item" onclick="ctxAction('info')">ℹ️ File Info</div>
   <div class="ctx-item danger" onclick="ctxAction('remove')">✖ Remove from Catalog</div>
@@ -1118,8 +1155,8 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
         <div class="help-a">Watch Folders automatically monitor a folder on your computer and tag or encrypt new files as they arrive. Available on the Pro plan.</div>
       </div>
       <div class="help-section">
-        <div class="help-q">☁️ How does cloud backup work?</div>
-        <div class="help-a">Cloud backup to Google Drive and OneDrive is coming soon. For now, use <strong>Export Catalog</strong> in Settings → Data to save a backup of your file list.</div>
+        <div class="help-q">💾 How does backup work?</div>
+        <div class="help-a">Go to <strong>Backup &amp; Restore</strong> in the sidebar and click <strong>Back Up Now</strong>. Your browser will ask you to pick a destination folder — choose your internal drive, an external hard drive, or a thumb drive. OrcaFiles copies all your files there along with a catalog file. You can then drag that folder into Google Drive, Dropbox, or any cloud service yourself. No accounts or sign-ins needed inside OrcaFiles.</div>
       </div>
       <div class="help-section">
         <div class="help-q">🔑 How do I connect my wallet?</div>
@@ -2253,6 +2290,112 @@ function focusSearch() {
   if (inp) { inp.focus(); showPage('files'); }
 }
 
+// ── LOCAL BACKUP ─────────────────────────────────────────────────
+function updateBackupStatus() {
+  const total = S.catalog.length;
+  const accessible = S.catalog.filter(f => f._handle).length;
+  const lastRaw = localStorage.getItem('orcafiles_last_backup');
+
+  const totalEl = el('bkp-stat-total');
+  const accessEl = el('bkp-stat-accessible');
+  const lastEl = el('bkp-stat-last');
+
+  if (totalEl) totalEl.textContent = total + ' file' + (total !== 1 ? 's' : '');
+  if (accessEl) {
+    accessEl.textContent = accessible + ' / ' + total;
+    if (accessible < total && total > 0) accessEl.style.color = 'var(--yellow)';
+    else accessEl.style.color = 'var(--green)';
+  }
+  if (lastEl) {
+    if (lastRaw) {
+      const d = new Date(parseInt(lastRaw, 10));
+      lastEl.textContent = d.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'}) +
+        ' at ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      lastEl.style.color = 'var(--green)';
+    } else {
+      lastEl.textContent = 'Never';
+      lastEl.style.color = 'var(--muted)';
+    }
+  }
+}
+
+async function backupToFolder() {
+  if (!window.showDirectoryPicker) {
+    toast('Your browser does not support folder picker. Please use Chrome or Edge.', 'err', 6000);
+    return;
+  }
+  if (S.catalog.length === 0) {
+    toast('No files in catalog yet. Open a folder first.', 'warn');
+    return;
+  }
+  const accessible = S.catalog.filter(f => f._handle);
+  if (accessible.length === 0) {
+    toast('Files not loaded. Click “Open Folder” in Files first, then try backup again.', 'warn', 6000);
+    return;
+  }
+
+  // Let user pick destination
+  let destDir;
+  try {
+    destDir = await window.showDirectoryPicker({ mode: 'readwrite', startIn: 'downloads' });
+  } catch(e) {
+    if (e.name !== 'AbortError') toast('Could not open folder picker: ' + e.message, 'err');
+    return;
+  }
+
+  // Create dated subfolder
+  const dateStr = new Date().toISOString().slice(0, 10);
+  let backupFolder;
+  try {
+    backupFolder = await destDir.getDirectoryHandle('OrcaFiles-Backup-' + dateStr, { create: true });
+  } catch(e) {
+    toast('Could not create backup folder: ' + e.message, 'err');
+    return;
+  }
+
+  toast('💾 Backing up ' + accessible.length + ' files…', 'ok', 3000);
+
+  let copied = 0, failed = 0;
+  for (const f of accessible) {
+    try {
+      const fileObj = await f._handle.getFile();
+      const destFile = await backupFolder.getFileHandle(f.name, { create: true });
+      const writable  = await destFile.createWritable();
+      await writable.write(await fileObj.arrayBuffer());
+      await writable.close();
+      copied++;
+    } catch(e) {
+      failed++;
+    }
+  }
+
+  // Write catalog JSON alongside the files
+  try {
+    const catalogData = JSON.stringify({
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      catalog: S.catalog.map(f => { const {_handle, ...rest} = f; return rest; }),
+      vfolders: S.vfolders
+    }, null, 2);
+    const catFile    = await backupFolder.getFileHandle('orcafiles-catalog.json', { create: true });
+    const catWritable = await catFile.createWritable();
+    await catWritable.write(catalogData);
+    await catWritable.close();
+  } catch(e) { /* non-fatal */ }
+
+  // Save timestamp
+  localStorage.setItem('orcafiles_last_backup', Date.now().toString());
+  updateBackupStatus();
+
+  if (failed === 0) {
+    toast('✅ Backup complete! ' + copied + ' file' + (copied !== 1 ? 's' : '') +
+      ' copied to “' + backupFolder.name + '”', 'ok', 6000);
+  } else {
+    toast('⚠️ Backup done: ' + copied + ' copied, ' + failed + ' could not be read. ' +
+      'Make sure your files folder is still open.', 'warn', 7000);
+  }
+}
+
 // ── EXPORT / IMPORT ───────────────────────────────────────────────
 function exportCatalog() {
   const data = JSON.stringify({catalog: S.catalog.map(f => {
@@ -2573,6 +2716,7 @@ function showPage(pageId) {
   if (nav) nav.classList.add('active');
   if (pageId === 'files') renderFiles();
   if (pageId === 'encrypted') renderEncryptedPage();
+  if (pageId === 'backup') updateBackupStatus();
 }
 </script>
 <script>
