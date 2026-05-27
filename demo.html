@@ -402,6 +402,114 @@ html, body {
 .glow-orb {
   position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.12;
 }
+
+/* ══════════════════════════════════════════════════
+   MOBILE RESPONSIVE  —  max-width: 640px
+══════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+
+  /* ── GENERAL ── */
+  html, body { font-size: 13px; }
+  #scene-wrap { overflow-x: hidden; inset: 48px 0 3px 0; }
+
+  /* ── TOPBAR ── */
+  #topbar { padding: 0 12px; gap: 8px; height: 48px; }
+  .topbar-logo img { width: 26px; height: 26px; }
+  .topbar-logo-name { font-size: 14px; }
+  /* Shrink "Skip to App →" to "App →" */
+  #skip-btn { font-size: 0; padding: 5px 9px; gap: 0; min-width: 0; }
+  #skip-btn::after { content: 'App \2192'; font-size: 11px; font-weight: 600; color: var(--text); }
+
+  /* ── LIVE DEMO PILL ── */
+  #live-pill { font-size: 9px; padding: 3px 7px; gap: 4px; }
+  .live-dot { width: 5px; height: 5px; }
+
+  /* ── SCENE LABEL ── */
+  .scene-label { font-size: 9px; padding: 3px 10px; }
+
+  /* ── HERO ── */
+  .hero-inner { padding: 16px 14px; max-width: 100%; }
+  .hero-logo-wrap { margin-bottom: 14px; }
+  .hero-logo-img { width: 60px; height: 60px; }
+  .hero-title { font-size: 30px; }
+  .hero-tagline { font-size: 14px; }
+  .hero-sub { font-size: 11px; margin-bottom: 18px; }
+  .hero-pills { gap: 8px; margin-bottom: 18px; }
+  .hero-pill { font-size: 11px; padding: 6px 12px; }
+  .hero-cta {
+    display: flex; width: 100%; justify-content: center;
+    font-size: 13px; padding: 12px 16px; box-sizing: border-box;
+  }
+
+  /* ── WIZARD ── */
+  .wizard-card {
+    width: calc(100% - 24px); max-width: 100%;
+    border-radius: 14px; padding: 20px 14px;
+  }
+  .wiz-title { font-size: 17px; }
+  .wiz-sub { font-size: 12px; margin-bottom: 18px; }
+  .wiz-q { font-size: 14px; }
+  .wiz-opt { width: 100%; padding: 10px 12px; }
+  .wiz-opt-title { font-size: 13px; }
+  .wiz-opt-sub { font-size: 10px; }
+
+  /* ── FILES SCENE ── */
+  #scene-files { padding: 10px 8px !important; }
+  .scene-files-inner { flex-direction: column; }
+  .mini-sidebar { display: none; }
+  .files-area {
+    border-left: 1px solid var(--border);
+    border-radius: 14px; padding: 12px;
+  }
+  .files-title { font-size: 15px; }
+  .files-count { font-size: 11px; }
+  /* 2-column grid on mobile */
+  .file-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .f-card { padding: 10px; gap: 5px; }
+  .f-icon { font-size: 20px; }
+  .f-name { font-size: 10px; }
+  .f-badge { font-size: 9px; padding: 2px 6px; }
+
+  /* ── AI TAGS ── */
+  .f-tags { gap: 3px; flex-wrap: wrap; }
+  .f-tag { font-size: 9px; padding: 1px 4px; }
+
+  /* ── AI SCENE ── */
+  #scene-ai { padding: 10px 8px !important; }
+  #scene-ai .mini-sidebar { display: none; }
+  #scene-ai .files-area {
+    border-left: 1px solid var(--border);
+    border-radius: 14px; padding: 12px;
+  }
+
+  /* ── AI PANEL — full-width, pinned to bottom ── */
+  #ai-panel {
+    position: fixed;
+    bottom: 3px; left: 0; right: 0;
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    z-index: 150;
+  }
+  .ai-panel-header { padding: 10px 14px; }
+  .ai-panel-title { font-size: 12px; }
+  .ai-panel-sub { font-size: 10px; }
+  .ai-messages { padding: 10px 12px; gap: 8px; }
+  .ai-msg-bubble { font-size: 11px; padding: 6px 9px; max-width: 180px; }
+  .ai-msg-avatar { width: 22px; height: 22px; font-size: 11px; }
+
+  /* ── ENCRYPTION ── */
+  .encrypt-card {
+    width: calc(100% - 24px); max-width: 100%;
+    padding: 24px 14px; border-radius: 14px;
+  }
+  .encrypt-file-icon { font-size: 40px; margin-bottom: 10px; }
+  .encrypt-file-name { font-size: 15px; }
+  .encrypt-file-size { font-size: 11px; margin-bottom: 20px; }
+  .encrypt-badge { font-size: 12px; padding: 7px 14px; margin-bottom: 18px; }
+  .encrypt-progress-label { font-size: 11px; }
+  .encrypt-click-hint { font-size: 11px; }
+
+}
 </style>
 </head>
 <body>
