@@ -1343,6 +1343,7 @@ function loadSettingsUI() {
 }
 
 function getTier() {
+  if (localStorage.getItem('orcafiles_owner') === '1') return 'pro';
   if (S.addr && S.addr.toLowerCase() === KEIKO_WALLET.toLowerCase()) return 'pro';
   if (S.plan === 'pro'  && S.planPaidUntil && Date.now() < S.planPaidUntil) return 'pro';
   if (S.plan === 'home' && S.planPaidUntil && Date.now() < S.planPaidUntil) return 'home';
@@ -1362,7 +1363,7 @@ async function walletAction() {
 
 async function connectWallet() {
   if (!window.ethereum) {
-    toast('Please install MetaMask or Trust Wallet to connect.', 'err', 6000);
+    toast('Please install Trust Wallet to connect.', 'err', 6000);
     return;
   }
   try {
@@ -1646,7 +1647,7 @@ async function aesDecryptResponse(sessionKey, blob) {
 // ── AIVM JWT ──────────────────────────────────────────────────────
 async function getAivmJWT() {
   if (_aivmJWT && Date.now() < _aivmJWTExp - 30000) return _aivmJWT;
-  if (!S.addr || !S.signer) throw new Error('Wallet not connected');
+  if (!S.addr || !S.signer) throw new Error('AI requires Trust Wallet connection — click Connect Wallet in the top bar.');
   const r = await fetch(AIVM_GATEWAY + '/api/auth/challenge?address=' + S.addr);
   if (!r.ok) throw new Error('AIVM auth challenge failed (' + r.status + ')');
   const {message} = await r.json();
@@ -2435,7 +2436,8 @@ async function sendAIMessage() {
   const msg = input.value.trim();
   if (!msg) return;
   if (!canUseAI()) { addBotMsg('You\'ve used your 5 free AI calls. Connect wallet and subscribe to continue.'); toggleAIPanel(); openPaymentModal(); return; }
-  if (!S.addr) { addBotMsg('Please connect your wallet first — click "Connect Wallet" in the top bar.'); return; }
+  const ownerMode = localStorage.getItem('orcafiles_owner') === '1';
+  if (!S.addr && !ownerMode) { addBotMsg('Please connect your Trust Wallet first — click "Connect Wallet" in the top bar.'); return; }
 
   _aiActive = true;
   input.disabled = true; sendBtn.disabled = true;
