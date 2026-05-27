@@ -16,7 +16,7 @@
   --green: #00e676;
   --yellow: #ffaa00;
   --red: #ff4444;
-  --muted: #6b8099;
+  --muted: #8fa8c0;
   --text: #e0eaf5;
   --sidebar-w: 240px;
 }
@@ -404,9 +404,32 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 .nav-biz { opacity: 0.6; }
 .nav-biz:hover { opacity: 0.9; }
 .nav-biz-badge {
-  margin-left: auto; font-size: 9px; background: rgba(124,58,237,0.2); color: #a78bfa;
+  margin-left: auto; font-size: 9px; background: rgba(124,58,237,0.2); color: #c4b5fd;
   border: 1px solid rgba(124,58,237,0.3); border-radius: 4px; padding: 1px 5px;
 }
+/* ── TIER BADGES ─────────────────────────────────────────────────── */
+.paid-badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; }
+.tier-home  { background:rgba(0,180,100,0.18); color:#4ade80; }
+.tier-pro   { background:rgba(124,58,237,0.25); color:#c4b5fd; }
+/* ── TIER PICKER (payment modal) ─────────────────────────────────── */
+.tier-picker { display:flex; gap:10px; margin-bottom:14px; }
+.tier-pick-card { flex:1; background:var(--card); border:2px solid var(--border); border-radius:10px; padding:14px 12px; cursor:pointer; transition:border-color .2s; display:flex; flex-direction:column; gap:4px; }
+.tier-pick-card:has(input:checked) { border-color:var(--cyan); background:rgba(0,212,255,0.05); }
+.tier-pick-card input { display:none; }
+.tier-pick-name { font-size:14px; font-weight:700; color:var(--text); }
+.tier-pick-price { font-size:22px; font-weight:900; color:var(--cyan); line-height:1; margin:4px 0; }
+.tier-pick-price span { font-size:12px; font-weight:400; color:var(--muted); }
+.tier-pick-features { list-style:none; padding:0; margin:6px 0 0; font-size:11px; color:#b0b8c8; line-height:1.9; }
+/* ── PLAN CARDS (settings) ───────────────────────────────────────── */
+.plan-cards-row { display:flex; gap:10px; flex-wrap:wrap; }
+.plan-card { flex:1; min-width:140px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 12px; display:flex; flex-direction:column; gap:4px; }
+.plan-card-highlight { border-color:rgba(0,212,255,0.4); background:rgba(0,212,255,0.04); }
+.plan-card-pro { border-color:rgba(124,58,237,0.5); background:rgba(124,58,237,0.06); }
+.plan-card-name { font-size:13px; font-weight:700; color:var(--text); }
+.plan-card-price { font-size:26px; font-weight:900; color:var(--cyan); line-height:1.1; }
+.plan-card-features { list-style:none; padding:0; margin:8px 0 0; font-size:11px; color:#b0b8c8; line-height:2; }
+.plan-card-features .dim { color:#6a7385; }
+@media (max-width:640px) { .tier-picker { flex-direction:column; } .plan-cards-row { flex-direction:column; } }
 #sidebar-stats {
   padding: 10px 12px 6px; font-size: 11px; color: var(--muted);
   border-top: 1px solid var(--border); margin-top: 8px; line-height: 1.8;
@@ -686,11 +709,11 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
       </div>
 
       <div class="nav-section-label" style="margin-top:12px;">Automation</div>
-      <div class="nav-item nav-biz" onclick="showBizModal('Watch Folders')">
-        <span class="nav-icon">👁️</span><span class="nav-label">Watch Folders</span><span class="nav-biz-badge">Business</span>
+      <div class="nav-item nav-biz" onclick="showProModal('Watch Folders')">
+        <span class="nav-icon">👁️</span><span class="nav-label">Watch Folders</span><span class="nav-biz-badge">Pro</span>
       </div>
-      <div class="nav-item nav-biz" onclick="showBizModal('Employee Training')">
-        <span class="nav-icon">🎓</span><span class="nav-label">Training</span><span class="nav-biz-badge">Business</span>
+      <div class="nav-item nav-biz" onclick="showProModal('Employee Training')">
+        <span class="nav-icon">🎓</span><span class="nav-label">Training</span><span class="nav-biz-badge">Pro</span>
       </div>
 
       <div class="nav-section-label" style="margin-top:12px;">Backup</div>
@@ -859,13 +882,50 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
           </div>
         </div>
 
-        <div class="settings-section">
-          <div class="settings-title">Payment &amp; Subscription</div>
+        <div class="settings-section" id="plan-section">
+          <div class="settings-title">Plans &amp; Subscription</div>
           <div class="settings-card">
-            <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Unlock unlimited AI with a monthly LCAI subscription (~$4.99/month).</p>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="btn btn-primary btn-sm" onclick="openPaymentModal()">🔑 Manage Subscription</button>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Current plan: <strong id="plan-current-tier" style="color:var(--cyan);">Free</strong> · Paid in LCAI — no credit cards, no accounts.</p>
+            <div class="plan-cards-row">
+              <div class="plan-card">
+                <div class="plan-card-name">Free</div>
+                <div class="plan-card-price">$0</div>
+                <ul class="plan-card-features">
+                  <li>5 AI uses total</li>
+                  <li>File organizing &amp; tagging</li>
+                  <li>AES-256 encryption</li>
+                  <li class="dim">No Watch Folders</li>
+                  <li class="dim">No Training Module</li>
+                </ul>
+                <div style="margin-top:auto;padding-top:12px;font-size:11px;color:var(--muted);">Current plan</div>
+              </div>
+              <div class="plan-card plan-card-highlight">
+                <div class="plan-card-name">🏠 Home</div>
+                <div class="plan-card-price">$1.99<span style="font-size:13px;font-weight:400;">/mo</span></div>
+                <ul class="plan-card-features">
+                  <li>Unlimited AI tagging</li>
+                  <li>Ask Keiko AI chat</li>
+                  <li>Encryption &amp; backup</li>
+                  <li class="dim">No Watch Folders</li>
+                  <li class="dim">No Training Module</li>
+                </ul>
+                <button class="btn btn-primary btn-sm" style="margin-top:auto;" onclick="openPaymentModal('home')">Upgrade to Home</button>
+              </div>
+              <div class="plan-card plan-card-pro">
+                <div class="plan-card-name">⭐ Pro</div>
+                <div class="plan-card-price">$4.99<span style="font-size:13px;font-weight:400;">/mo</span></div>
+                <ul class="plan-card-features">
+                  <li>Everything in Home</li>
+                  <li>Watch Folders</li>
+                  <li>Training Module</li>
+                  <li>Priority features</li>
+                </ul>
+                <button class="btn btn-primary btn-sm" style="margin-top:auto;background:linear-gradient(135deg,#7c3aed,#00d4ff);" onclick="openPaymentModal('pro')">Upgrade to Pro</button>
+              </div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
               <button class="btn btn-ghost btn-sm" onclick="walletAction()">👛 Wallet</button>
+              <button class="btn btn-ghost btn-sm" onclick="openPaymentModal()">🔑 Renew / Change Plan</button>
             </div>
           </div>
         </div>
@@ -885,7 +945,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
         <div class="settings-section" id="business-section">
           <div class="settings-title">Business Version</div>
           <div class="settings-card">
-            <p style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:8px;">💼 Need multi-user access, Watch Folders, or team messaging?</p>
+            <p style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:8px;">💼 Need multi-user access or team messaging?</p>
             <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6;">
               Download the OrcaFiles Business Server — run it on your own PC or VPS for full multi-user features.
             </p>
@@ -894,17 +954,18 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
             </button>
             <table class="compare-table" style="margin-top:20px;">
               <thead>
-                <tr><th>Feature</th><th>Home (this app)</th><th>Business Server</th></tr>
+                <tr><th>Feature</th><th>Free</th><th>Home</th><th>Pro</th><th>Business Server</th></tr>
               </thead>
               <tbody>
-                <tr><td class="feat">File organizing &amp; tagging</td><td class="yes">✓</td><td class="yes">✓</td></tr>
-                <tr><td class="feat">AES-256 encryption</td><td class="yes">✓</td><td class="yes">✓</td></tr>
-                <tr><td class="feat">AI auto-tagging</td><td class="yes">✓</td><td class="yes">✓</td></tr>
-                <tr><td class="feat">Cloud backup</td><td class="no">Coming soon</td><td class="yes">✓</td></tr>
-                <tr><td class="feat">Multi-user / team</td><td class="no">—</td><td class="yes">✓</td></tr>
-                <tr><td class="feat">Watch Folders</td><td class="no">—</td><td class="yes">✓</td></tr>
-                <tr><td class="feat">Team messaging</td><td class="no">—</td><td class="yes">✓</td></tr>
-                <tr><td class="feat">Self-hosted server</td><td class="no">—</td><td class="yes">✓</td></tr>
+                <tr><td class="feat">File organizing &amp; tagging</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                <tr><td class="feat">AES-256 encryption</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                <tr><td class="feat">AI auto-tagging</td><td class="no">5 uses</td><td class="yes">Unlimited</td><td class="yes">Unlimited</td><td class="yes">✓</td></tr>
+                <tr><td class="feat">Ask Keiko AI chat</td><td class="no">5 uses</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                <tr><td class="feat">Cloud backup</td><td class="no">Soon</td><td class="no">Soon</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                <tr><td class="feat">Watch Folders</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                <tr><td class="feat">Training Module</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                <tr><td class="feat">Multi-user / team</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+                <tr><td class="feat">Self-hosted server</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
               </tbody>
             </table>
           </div>
@@ -960,15 +1021,40 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 <div id="modal-payment" class="modal-overlay" style="display:none;" onclick="modalOverlayClose(event,'modal-payment')">
   <div class="modal">
     <div class="modal-header">
-      <h3>🔑 Unlock AI — Monthly Subscription</h3>
+      <h3>🔑 Choose Your Plan</h3>
       <button class="modal-close" onclick="closeModal('modal-payment')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="info-box">⚡ OrcaFiles AI uses Lightchain AIVM for decentralized inference. Pay monthly in LCAI — no credit cards, no accounts.</div>
+      <div class="info-box">⚡ Paid in LCAI via Lightchain — no credit cards, no accounts. Subscription lasts 31 days.</div>
+      <div class="tier-picker">
+        <label class="tier-pick-card" id="tier-pick-home">
+          <input type="radio" name="pay-tier" value="home" checked onchange="refreshPaymentPrice()">
+          <div class="tier-pick-name">🏠 Home</div>
+          <div class="tier-pick-price">$1.99<span>/mo</span></div>
+          <ul class="tier-pick-features">
+            <li>✓ Unlimited AI tagging</li>
+            <li>✓ Ask Keiko AI chat</li>
+            <li>✓ Encryption &amp; backup</li>
+            <li>✗ Watch Folders</li>
+            <li>✗ Training Module</li>
+          </ul>
+        </label>
+        <label class="tier-pick-card" id="tier-pick-pro">
+          <input type="radio" name="pay-tier" value="pro" onchange="refreshPaymentPrice()">
+          <div class="tier-pick-name">⭐ Pro</div>
+          <div class="tier-pick-price">$4.99<span>/mo</span></div>
+          <ul class="tier-pick-features">
+            <li>✓ Everything in Home</li>
+            <li>✓ Watch Folders</li>
+            <li>✓ Training Module</li>
+            <li>✓ Priority features</li>
+          </ul>
+        </label>
+      </div>
       <div class="card" style="text-align:center;padding:20px;border-color:rgba(0,212,255,0.2);">
         <div id="lcai-price-display">Loading…</div>
         <div id="lcai-rate-display">Fetching LCAI price…</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:6px;">per month ($4.99 USD equivalent)</div>
+        <div id="pay-usd-label" style="font-size:12px;color:var(--muted);margin-top:6px;">per month</div>
       </div>
       <div class="form-group">
         <label class="form-label">Send LCAI to this address:</label>
@@ -1091,7 +1177,8 @@ const AIVM_CHAIN_HEX = '0x23F0';
 const LC_RPC        = 'https://rpc.mainnet.lightchain.ai';
 const PAYMENT_ADDR  = '0x1F899FaD2C8BD70b6eF356ae6cC3c0abDbB15EB5';
 const KEIKO_WALLET  = '0x1F899FaD2C8BD70b6eF356ae6cC3c0abDbB15EB5';
-const SUB_USD       = 4.99;
+const HOME_USD      = 1.99;
+const PRO_USD       = 4.99;
 const FREE_AI_USES  = 5;
 
 const LS_CATALOG    = 'orcafiles_v2_catalog';
@@ -1124,6 +1211,7 @@ const AIVM_ABI = [
 const S = {
   addr: null, provider: null, signer: null,
   freeUsesLeft: FREE_AI_USES, paidUntil: null, paymentTxHash: null,
+  plan: 'free', planPaidUntil: null, planTxHash: null,
   catalog: [],        // array of file entry objects
   vfolders: [],       // virtual folders
   dirHandle: null,    // FileSystemDirectoryHandle
@@ -1206,9 +1294,12 @@ function loadAll() {
   try {
     const ws = localStorage.getItem(LS_WALLET);
     const w = ws ? JSON.parse(ws) : {};
-    S.freeUsesLeft  = w.freeUsesLeft  != null ? w.freeUsesLeft : FREE_AI_USES;
-    S.paidUntil     = w.paidUntil     || null;
-    S.paymentTxHash = w.paymentTxHash || null;
+    S.freeUsesLeft   = w.freeUsesLeft  != null ? w.freeUsesLeft : FREE_AI_USES;
+    S.paidUntil      = w.paidUntil     || null;
+    S.paymentTxHash  = w.paymentTxHash || null;
+    S.plan           = w.plan          || (S.paidUntil && Date.now() < S.paidUntil ? 'home' : 'free');
+    S.planPaidUntil  = w.planPaidUntil || S.paidUntil  || null;
+    S.planTxHash     = w.planTxHash    || null;
   } catch(e) {}
 
   try {
@@ -1229,6 +1320,9 @@ function saveWallet() {
       freeUsesLeft: S.freeUsesLeft,
       paidUntil: S.paidUntil,
       paymentTxHash: S.paymentTxHash,
+      plan: S.plan,
+      planPaidUntil: S.planPaidUntil,
+      planTxHash: S.planTxHash,
       addr: S.addr
     }));
   } catch(e) {}
@@ -1248,10 +1342,15 @@ function loadSettingsUI() {
   if (el('default-protection')) el('default-protection').value  = String(S.settings.defaultProtection);
 }
 
-function isPaid() {
-  if (S.addr && S.addr.toLowerCase() === KEIKO_WALLET.toLowerCase()) return true;
-  return S.paidUntil && Date.now() < S.paidUntil;
+function getTier() {
+  if (S.addr && S.addr.toLowerCase() === KEIKO_WALLET.toLowerCase()) return 'pro';
+  if (S.plan === 'pro'  && S.planPaidUntil && Date.now() < S.planPaidUntil) return 'pro';
+  if (S.plan === 'home' && S.planPaidUntil && Date.now() < S.planPaidUntil) return 'home';
+  if (S.paidUntil && Date.now() < S.paidUntil) return 'home'; // backwards compat
+  return 'free';
 }
+function isPro()  { return getTier() === 'pro'; }
+function isPaid() { const t = getTier(); return t === 'home' || t === 'pro'; }
 function canUseAI() { return isPaid() || S.freeUsesLeft > 0; }
 function consumeFree() { if (!isPaid() && S.freeUsesLeft > 0) { S.freeUsesLeft--; saveWallet(); updateWalletUI(); } }
 
@@ -1311,9 +1410,13 @@ function updateWalletUI() {
     btnEl.className = 'btn btn-sm btn-primary';
   }
 
-  if (isPaid()) {
-    const days = Math.ceil((S.paidUntil - Date.now()) / 86400000);
-    badgeEl.innerHTML = '<span class="paid-badge">⭐ Premium (' + days + 'd)</span>';
+  const tier = getTier();
+  if (tier === 'pro') {
+    const days = S.planPaidUntil ? Math.ceil((S.planPaidUntil - Date.now()) / 86400000) : '∞';
+    badgeEl.innerHTML = '<span class="paid-badge tier-pro">⭐ Pro (' + days + 'd)</span>';
+  } else if (tier === 'home') {
+    const days = S.planPaidUntil ? Math.ceil((S.planPaidUntil - Date.now()) / 86400000) : '∞';
+    badgeEl.innerHTML = '<span class="paid-badge tier-home">🏠 Home (' + days + 'd)</span>';
   } else if (S.freeUsesLeft > 0) {
     badgeEl.innerHTML = '<span class="free-badge">' + S.freeUsesLeft + ' free AI uses</span>';
   } else {
@@ -1321,9 +1424,12 @@ function updateWalletUI() {
   }
 
   if (aiLabel) {
-    if (isPaid()) aiLabel.textContent = 'Unlimited (Premium)';
+    if (tier === 'pro')  aiLabel.textContent = 'Unlimited (Pro)';
+    else if (tier === 'home') aiLabel.textContent = 'Unlimited (Home)';
     else aiLabel.textContent = S.freeUsesLeft + ' free uses remaining';
   }
+  // update plan settings UI if visible
+  if (el('plan-current-tier')) el('plan-current-tier').textContent = tier.charAt(0).toUpperCase() + tier.slice(1);
 
   // show FAB if app is visible
   const fab = el('ai-fab');
@@ -1354,25 +1460,41 @@ async function getLCAIPrice() {
   return _lcaiPrice || 0.004;
 }
 
+function getSelectedPlanUSD() {
+  const sel = document.querySelector('input[name="pay-tier"]:checked');
+  return sel && sel.value === 'pro' ? PRO_USD : HOME_USD;
+}
+
 async function getRequiredLCAIWei() {
   const price = await getLCAIPrice();
-  const lcai  = SUB_USD / price;
+  const lcai  = getSelectedPlanUSD() / price;
   return BigInt(Math.round(lcai * 1e18));
 }
 
 // ── PAYMENT ───────────────────────────────────────────────────────
-async function openPaymentModal() {
+async function openPaymentModal(tier) {
   openModal('modal-payment');
   el('lcai-price-display').textContent = 'Loading…';
   el('lcai-rate-display').textContent  = '';
   el('payment-status').textContent     = '';
+  if (tier) {
+    const radio = document.querySelector('input[name="pay-tier"][value="' + tier + '"]');
+    if (radio) radio.checked = true;
+  }
+  await refreshPaymentPrice();
+}
+
+async function refreshPaymentPrice() {
+  const usd = getSelectedPlanUSD();
   try {
     const price = await getLCAIPrice();
-    const lcai  = (SUB_USD / price).toFixed(2);
+    const lcai  = (usd / price).toFixed(2);
     el('lcai-price-display').textContent = lcai + ' LCAI';
     el('lcai-rate-display').textContent  = '1 LCAI = $' + price.toFixed(4) + ' USD';
+    el('pay-usd-label').textContent      = 'per month ($' + usd.toFixed(2) + ' USD equivalent)';
   } catch(e) {
-    el('lcai-price-display').textContent = '~1250 LCAI';
+    el('lcai-price-display').textContent = usd === PRO_USD ? '~1250 LCAI' : '~500 LCAI';
+    el('pay-usd-label').textContent      = 'per month ($' + usd.toFixed(2) + ' USD equivalent)';
   }
 }
 
@@ -1406,14 +1528,19 @@ async function submitPayment() {
   el('payment-status').textContent = 'Verifying on Lightchain…';
   el('btn-verify-pay').disabled = true;
   try {
-    const reqWei = await getRequiredLCAIWei();
-    const ts     = await verifyPaymentTx(txHash, reqWei);
-    S.paidUntil     = ts + (31 * 24 * 3600 * 1000);
+    const reqWei    = await getRequiredLCAIWei();
+    const ts        = await verifyPaymentTx(txHash, reqWei);
+    const selPlan   = (document.querySelector('input[name="pay-tier"]:checked') || {}).value || 'home';
+    S.plan          = selPlan;
+    S.planPaidUntil = ts + (31 * 24 * 3600 * 1000);
+    S.planTxHash    = txHash;
+    S.paidUntil     = S.planPaidUntil; // backwards compat
     S.paymentTxHash = txHash;
     saveWallet();
     closeModal('modal-payment');
     updateWalletUI();
-    toast('🎉 Payment verified! Premium AI unlocked for 31 days.', 'ok', 5000);
+    const label = selPlan === 'pro' ? 'Pro' : 'Home';
+    toast('🎉 Payment verified! ' + label + ' plan unlocked for 31 days.', 'ok', 5000);
   } catch(e) {
     el('payment-status').textContent = '';
     toast(e.message || 'Verification failed', 'err', 6000);
@@ -1826,7 +1953,11 @@ function openReportModal() {
 }
 
 function showBizModal(feature) {
-  toast(`${feature} is available in the Business Version — self-hosted download coming soon.`, 'ok');
+  showProModal(feature);
+}
+function showProModal(feature) {
+  if (isPro()) return; // already Pro — shouldn't reach here
+  toast(feature + ' requires the Pro plan ($4.99/month). Go to Settings → Payment to upgrade.', 'warn', 5000);
 }
 
 // ── FILE RENDERING ────────────────────────────────────────────────
@@ -2094,6 +2225,7 @@ function clearAllData() {
   [LS_CATALOG, LS_SETTINGS, LS_WALLET].forEach(k => localStorage.removeItem(k));
   S.catalog = []; S.vfolders = []; S.dirHandle = null;
   S.freeUsesLeft = FREE_AI_USES; S.paidUntil = null;
+  S.plan = 'free'; S.planPaidUntil = null; S.planTxHash = null;
   renderFiles(); renderEncryptedPage();
   updateWalletUI();
   toast('🗑️ All data cleared.', 'ok');
