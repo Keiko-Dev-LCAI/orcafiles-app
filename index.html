@@ -430,6 +430,11 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 .plan-card-features { list-style:none; padding:0; margin:8px 0 0; font-size:11px; color:#b0b8c8; line-height:2; }
 .plan-card-features .dim { color:#6a7385; }
 @media (max-width:640px) { .tier-picker { flex-direction:column; } .plan-cards-row { flex-direction:column; } }
+/* ── HELP MODAL ──────────────────────────────────────────────────── */
+.help-section { border-bottom:1px solid var(--border); padding:14px 0; }
+.help-section:last-child { border-bottom:none; }
+.help-q { font-size:14px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.help-a { font-size:13px; color:#b0b8c8; line-height:1.6; }
 #sidebar-stats {
   padding: 10px 12px 6px; font-size: 11px; color: var(--muted);
   border-top: 1px solid var(--border); margin-top: 8px; line-height: 1.8;
@@ -736,7 +741,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
       </div>
 
       <div class="nav-section-label" style="margin-top:12px;">Help</div>
-      <div class="nav-item" onclick="showPage('settings')">
+      <div class="nav-item" onclick="openHelpModal()">
         <span class="nav-icon">❓</span><span class="nav-label">Help &amp; How-To</span>
       </div>
       <div class="nav-item" onclick="openReportModal()">
@@ -1076,6 +1081,54 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-payment')">Cancel</button>
       <button class="btn btn-primary" id="btn-verify-pay" onclick="submitPayment()">✅ Verify Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Help Modal -->
+<div id="modal-help" class="modal-overlay" style="display:none;" onclick="modalOverlayClose(event,'modal-help')">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-header">
+      <h3>❓ Help &amp; How-To</h3>
+      <button class="modal-close" onclick="closeModal('modal-help')">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:70vh;overflow-y:auto;">
+      <div class="help-section">
+        <div class="help-q">📁 How do I add files?</div>
+        <div class="help-a">Click <strong>+ Add Files</strong> in the top bar. Your browser will ask you to select a folder — OrcaFiles will scan it and show all your files. Nothing is uploaded anywhere; everything stays on your computer.</div>
+      </div>
+      <div class="help-section">
+        <div class="help-q">🔒 How do I encrypt a file?</div>
+        <div class="help-a">Right-click any file and choose <strong>Encrypt File</strong>, or set your Default Protection Level to "Encrypted" in Settings. OrcaFiles uses AES-256-GCM encryption — your key never leaves your device.</div>
+      </div>
+      <div class="help-section">
+        <div class="help-q">🤖 How do I use AI tagging?</div>
+        <div class="help-a">Right-click a file and choose <strong>AI Tag</strong>, or click the 🤖 button in the file details panel. AI tagging uses Lightchain AIVM and requires a Home or Pro plan (or you have 5 free uses to start).</div>
+      </div>
+      <div class="help-section">
+        <div class="help-q">💬 How do I use Ask Keiko (AI chat)?</div>
+        <div class="help-a">Click the <strong>Ask AI</strong> button in the bottom right corner. You can ask things like "find all my PDFs", "which files haven't been backed up?", or "summarize this document." Requires a Home or Pro plan.</div>
+      </div>
+      <div class="help-section">
+        <div class="help-q">⭐ What's the difference between plans?</div>
+        <div class="help-a"><strong>Free</strong> — 5 AI uses, all basic features. <strong>Home ($1.99/mo)</strong> — unlimited AI, all personal features. <strong>Pro ($4.99/mo)</strong> — everything in Home plus Watch Folders and Training Module. Payment is in LCAI via Lightchain — no credit cards needed.</div>
+      </div>
+      <div class="help-section">
+        <div class="help-q">👁️ What are Watch Folders? (Pro)</div>
+        <div class="help-a">Watch Folders automatically monitor a folder on your computer and tag or encrypt new files as they arrive. Available on the Pro plan.</div>
+      </div>
+      <div class="help-section">
+        <div class="help-q">☁️ How does cloud backup work?</div>
+        <div class="help-a">Cloud backup to Google Drive and OneDrive is coming soon. For now, use <strong>Export Catalog</strong> in Settings → Data to save a backup of your file list.</div>
+      </div>
+      <div class="help-section">
+        <div class="help-q">🔑 How do I connect my wallet?</div>
+        <div class="help-a">Click <strong>Connect Wallet</strong> in the top bar. Make sure you have <strong>Trust Wallet</strong> installed and are on the <strong>Lightchain network</strong> (chain ID 9200). Your wallet is used to pay for your subscription in LCAI.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-help')">Close</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-help');openReportModal()">🐛 Report a Problem</button>
     </div>
   </div>
 </div>
@@ -1957,6 +2010,12 @@ function renderSidebarFolders() {
 
 function openReportModal() {
   toast('To report a problem, use the Ask AI panel or email support. Thank you!', 'ok');
+}
+
+function openHelpModal() { openModal('modal-help'); }
+
+function openReportModal() {
+  window.location.href = 'mailto:support@orcafiles.ai?subject=OrcaFiles%20Problem%20Report&body=Describe%20the%20issue%20you%20encountered%3A%0A%0A';
 }
 
 function showBizModal(feature) {
