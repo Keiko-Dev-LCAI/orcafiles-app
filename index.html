@@ -393,6 +393,70 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* ── V1-STYLE SIDEBAR ENHANCEMENTS ────────────────────────────── */
+.nav-badge {
+  margin-left: auto; background: rgba(0,212,255,0.15); color: var(--cyan);
+  font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 999px; min-width: 18px; text-align: center;
+}
+.nav-add-folder { opacity: 0.8; }
+.nav-add-folder:hover { opacity: 1; }
+.nav-biz { opacity: 0.6; }
+.nav-biz:hover { opacity: 0.9; }
+.nav-biz-badge {
+  margin-left: auto; font-size: 9px; background: rgba(124,58,237,0.2); color: #a78bfa;
+  border: 1px solid rgba(124,58,237,0.3); border-radius: 4px; padding: 1px 5px;
+}
+#sidebar-stats {
+  padding: 10px 12px 6px; font-size: 11px; color: var(--muted);
+  border-top: 1px solid var(--border); margin-top: 8px; line-height: 1.8;
+}
+
+/* ── V1-STYLE TOPBAR BUTTONS ───────────────────────────────────── */
+#topbar .topbar-search { flex: 1; max-width: 480px; display: flex; align-items: center; gap: 8px; }
+#topbar .topbar-right { gap: 8px; }
+
+/* ── V1-STYLE FILTER PILLS ─────────────────────────────────────── */
+.filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.filter-pill {
+  background: var(--card); border: 1px solid var(--border); border-radius: 999px;
+  color: var(--muted); font-size: 12px; font-weight: 600; padding: 5px 14px; cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-pill:hover { border-color: var(--cyan); color: var(--text); }
+.filter-pill.active { background: rgba(0,212,255,0.12); border-color: var(--cyan); color: var(--cyan); }
+.file-count-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+/* ── V1-STYLE FILE CARDS ───────────────────────────────────────── */
+.file-icon-lg { font-size: 48px; display: block; text-align: center; margin-bottom: 8px; }
+.prot-badge-corner { position: absolute; top: 8px; right: 8px; }
+#file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; padding: 4px 2px; }
+.file-card {
+  position: relative; background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 12px 10px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px;
+  min-height: 140px;
+}
+.file-card:hover { border-color: rgba(0,212,255,0.4); box-shadow: 0 0 12px rgba(0,212,255,0.08); }
+.file-card.selected { border-color: var(--cyan); background: rgba(0,212,255,0.06); }
+.file-card .file-name { font-size: 12px; font-weight: 600; color: var(--text); word-break: break-word; line-height: 1.3; max-width: 100%; }
+.file-card .file-meta { font-size: 10px; color: var(--muted); }
+.file-card .file-tags { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; margin-top: 2px; }
+.star-btn {
+  position: absolute; bottom: 7px; right: 8px; background: none; border: none;
+  font-size: 14px; color: var(--muted); cursor: pointer; padding: 0; line-height: 1;
+  transition: color 0.15s;
+}
+.star-btn:hover { color: #fbbf24; }
+.star-btn.starred { color: #fbbf24; }
+.file-card-list {
+  flex-direction: row; align-items: center; text-align: left; min-height: unset; padding: 10px 14px; gap: 12px;
+}
+.file-card-list .file-icon-lg { font-size: 28px; margin-bottom: 0; flex-shrink: 0; }
+.file-card-list .fc-info { flex: 1; min-width: 0; }
+.file-card-list .file-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-card-list .prot-badge-corner { position: static; }
+.file-card-list .star-btn { position: static; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -572,9 +636,13 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
     </div>
     <div class="topbar-search">
       <span style="font-size:14px;color:var(--muted);">🔍</span>
-      <input id="search-input" type="text" placeholder="Search files or ask AI…" autocomplete="off" oninput="onSearchInput()">
+      <input id="search-input" type="text" placeholder="Ask Keiko… find a file, or ask anything" autocomplete="off" oninput="onSearchInput()">
+      <button class="btn btn-sm btn-primary" onclick="onSearchInput()" style="padding:4px 12px;font-size:12px;">Ask</button>
     </div>
     <div class="topbar-right">
+      <button class="btn btn-sm btn-secondary" id="btn-new-folder-top" onclick="createVirtualFolder()" style="display:none;">📁 New Folder</button>
+      <button class="btn btn-sm btn-secondary" id="btn-scan-folder-top" onclick="openFolder()" style="display:none;">🔍 Scan Folder</button>
+      <button class="btn btn-sm btn-primary" id="btn-add-files-top" onclick="openFolder()">+ Add Files</button>
       <div id="wallet-badge">
         <span id="wallet-status-icon">🔌</span>
         <span id="wallet-addr-display" class="wallet-addr">No wallet</span>
@@ -587,15 +655,55 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
   <div id="shell">
     <!-- SIDEBAR -->
     <nav id="sidebar">
-      <div class="nav-section-label">Navigation</div>
-      <div class="nav-item active" data-page="files" onclick="showPage('files')">
-        <span class="nav-icon">📁</span><span class="nav-label">My Files</span>
+
+      <div class="nav-section-label">Quick Access</div>
+      <div class="nav-item active" data-view="all" onclick="setView2('all')">
+        <span class="nav-icon">📁</span><span class="nav-label">All Files</span><span class="nav-badge" id="badge-all"></span>
       </div>
-      <div class="nav-item" data-page="encrypted" onclick="showPage('encrypted')">
-        <span class="nav-icon">🔒</span><span class="nav-label">Encrypted</span>
+      <div class="nav-item" data-view="recent" onclick="setView2('recent')">
+        <span class="nav-icon">🕐</span><span class="nav-label">Recent</span>
       </div>
-      <div class="nav-item" data-page="backup" onclick="showPage('backup')">
-        <span class="nav-icon">☁️</span><span class="nav-label">Cloud Backup</span>
+      <div class="nav-item" data-view="encrypted" onclick="setView2('encrypted')">
+        <span class="nav-icon">🔒</span><span class="nav-label">Encrypted</span><span class="nav-badge" id="badge-enc"></span>
+      </div>
+      <div class="nav-item" data-view="backed" onclick="setView2('backed')">
+        <span class="nav-icon">☁️</span><span class="nav-label">Backed Up</span><span class="nav-badge" id="badge-backed"></span>
+      </div>
+      <div class="nav-item" data-view="starred" onclick="setView2('starred')">
+        <span class="nav-icon">⭐</span><span class="nav-label">Starred</span><span class="nav-badge" id="badge-starred"></span>
+      </div>
+
+      <div class="nav-section-label" style="margin-top:12px;">Folders</div>
+      <div id="sidebar-folders">
+        <div class="nav-item nav-add-folder" onclick="createVirtualFolder()">
+          <span class="nav-icon" style="color:var(--cyan);">+</span><span class="nav-label" style="color:var(--cyan);">New Folder</span>
+        </div>
+      </div>
+
+      <div class="nav-section-label" style="margin-top:12px;">Personal</div>
+      <div class="nav-item" data-page="succession" onclick="showPage('succession')">
+        <span class="nav-icon">📜</span><span class="nav-label">Succession Plan</span>
+      </div>
+
+      <div class="nav-section-label" style="margin-top:12px;">Automation</div>
+      <div class="nav-item nav-biz" onclick="showBizModal('Watch Folders')">
+        <span class="nav-icon">👁️</span><span class="nav-label">Watch Folders</span><span class="nav-biz-badge">Business</span>
+      </div>
+      <div class="nav-item nav-biz" onclick="showBizModal('Employee Training')">
+        <span class="nav-icon">🎓</span><span class="nav-label">Training</span><span class="nav-biz-badge">Business</span>
+      </div>
+
+      <div class="nav-section-label" style="margin-top:12px;">Backup</div>
+      <div class="nav-item" onclick="showPage('backup')">
+        <span class="nav-icon">⬆️</span><span class="nav-label">Backup Now</span>
+      </div>
+      <div class="nav-item" onclick="showPage('backup')">
+        <span class="nav-icon">⬇️</span><span class="nav-label">Restore Files</span>
+      </div>
+
+      <div class="nav-section-label" style="margin-top:12px;">Account</div>
+      <div class="nav-item" onclick="showPage('settings');setTimeout(()=>document.getElementById('plan-section')&&document.getElementById('plan-section').scrollIntoView({behavior:'smooth'}),200)">
+        <span class="nav-icon">💎</span><span class="nav-label">Plans &amp; Pricing</span>
       </div>
       <div class="nav-item" data-page="ai" onclick="showPage('ai')">
         <span class="nav-icon">🤖</span><span class="nav-label">Ask AI</span>
@@ -603,11 +711,17 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
       <div class="nav-item" data-page="settings" onclick="showPage('settings')">
         <span class="nav-icon">⚙️</span><span class="nav-label">Settings</span>
       </div>
-      <div class="sidebar-spacer"></div>
-      <div class="business-promo" onclick="showPage('settings');setTimeout(()=>document.getElementById('business-section').scrollIntoView({behavior:'smooth'}),200)">
-        <div class="business-promo-title">💼 Business Version</div>
-        <div class="business-promo-sub">Multi-user, Watch Folders, team messaging →</div>
+
+      <div class="nav-section-label" style="margin-top:12px;">Help</div>
+      <div class="nav-item" onclick="showPage('settings')">
+        <span class="nav-icon">❓</span><span class="nav-label">Help &amp; How-To</span>
       </div>
+      <div class="nav-item" onclick="openReportModal()">
+        <span class="nav-icon">🐛</span><span class="nav-label">Report a Problem</span>
+      </div>
+
+      <div class="sidebar-spacer"></div>
+      <div id="sidebar-stats"></div>
     </nav>
 
     <!-- MAIN CONTENT -->
@@ -620,27 +734,27 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
           <p class="page-sub" id="files-sub">Open a folder to start organizing your files.</p>
         </div>
         <div class="toolbar">
-          <button class="btn btn-primary" onclick="openFolder()">📂 Open Folder</button>
-          <button class="btn btn-secondary" id="btn-new-vfolder" onclick="createVirtualFolder()" style="display:none;">+ Virtual Folder</button>
-          <select class="filter-select" id="filter-protection" onchange="renderFiles()" style="display:none;">
-            <option value="all">All Files</option>
-            <option value="0">🔵 Organize Only</option>
-            <option value="1">🟡 Encrypted</option>
-            <option value="2">🟢 Backed Up</option>
-          </select>
-          <select class="filter-select" id="sort-by" onchange="renderFiles()" style="display:none;">
-            <option value="name">Sort: Name</option>
-            <option value="size">Sort: Size</option>
-            <option value="type">Sort: Type</option>
-            <option value="date">Sort: Date</option>
-          </select>
+          <div class="filter-pills" id="filter-pills" style="display:none;">
+            <button class="filter-pill active" data-prot="all" onclick="setProtFilter('all')">All Files</button>
+            <button class="filter-pill" data-prot="0" onclick="setProtFilter('0')">Organize Only</button>
+            <button class="filter-pill" data-prot="1" onclick="setProtFilter('1')">Encrypted</button>
+            <button class="filter-pill" data-prot="2" onclick="setProtFilter('2')">Backed Up</button>
+          </div>
           <div class="toolbar-spacer"></div>
+          <span class="file-count-label" id="file-count-label" style="display:none;"></span>
+          <select class="filter-select" id="sort-by" onchange="renderFiles()" style="display:none;">
+            <option value="name">Name</option>
+            <option value="size">Size</option>
+            <option value="type">Type</option>
+            <option value="date">Date</option>
+          </select>
           <div class="view-toggle" id="view-toggle" style="display:none;">
             <button class="view-btn active" id="btn-grid" onclick="setView('grid')" title="Grid view">⊞</button>
             <button class="view-btn" id="btn-list" onclick="setView('list')" title="List view">☰</button>
           </div>
           <button class="btn btn-sm btn-secondary" id="btn-select-all" onclick="selectAll()" style="display:none;">Select All</button>
           <button class="btn btn-sm btn-secondary" id="btn-tag-selected" onclick="tagSelected()" style="display:none;">🤖 AI Tag Selected</button>
+          <button class="btn btn-sm btn-secondary" onclick="window.print()" id="btn-print" style="display:none;">🖨️ Print Inventory</button>
         </div>
         <div id="files-unsupported" style="display:none;" class="warn-box">
           ⚠️ <strong>File System Access API not supported.</strong> Please use Chrome or Edge for full file management features.
@@ -1581,6 +1695,8 @@ async function openFolder() {
     saveCatalog();
     renderFiles();
     showToolbar(true);
+    updateSidebarStats();
+    renderSidebarFolders();
     el('files-sub').textContent = dirHandle.name + ' — ' + S.catalog.length + ' files';
     toast('✅ Folder loaded: ' + S.catalog.length + ' files', 'ok');
     if (S.settings.autoTag && canUseAI()) {
@@ -1634,9 +1750,83 @@ function guessType(name) {
 }
 
 function showToolbar(show) {
-  ['btn-new-vfolder','filter-protection','sort-by','view-toggle','btn-select-all','btn-tag-selected'].forEach(id => {
-    if (el(id)) el(id).style.display = show ? '' : 'none';
+  ['filter-pills','sort-by','view-toggle','btn-select-all','btn-tag-selected','btn-print',
+   'file-count-label','btn-new-folder-top','btn-scan-folder-top','btn-add-files-top'].forEach(id => {
+    const e = el(id);
+    if (!e) return;
+    if (id === 'btn-add-files-top') e.style.display = show ? '' : '';
+    else e.style.display = show ? '' : 'none';
   });
+  updateSidebarStats();
+  renderSidebarFolders();
+}
+
+// ── SIDEBAR VIEW FILTER ───────────────────────────────────────────
+let S2view = 'all';
+function setView2(v) {
+  S2view = v;
+  document.querySelectorAll('.nav-item[data-view]').forEach(n => {
+    n.classList.toggle('active', n.dataset.view === v);
+  });
+  document.querySelectorAll('.nav-item[data-page]').forEach(n => n.classList.remove('active'));
+  renderFiles();
+}
+
+function setProtFilter(val) {
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.dataset.prot === val));
+  renderFiles();
+}
+
+function toggleStar(fileId) {
+  const f = S.catalog.find(x => x.id === fileId);
+  if (!f) return;
+  f.starred = !f.starred;
+  saveCatalog();
+  renderFiles();
+  updateSidebarStats();
+}
+
+function updateSidebarStats() {
+  const total = S.catalog.length;
+  if (!total) { if (el('sidebar-stats')) el('sidebar-stats').innerHTML = ''; return; }
+  const enc = S.catalog.filter(f => f.protection >= 1).length;
+  const bkp = S.catalog.filter(f => f.protection === 2).length;
+  const starred = S.catalog.filter(f => f.starred).length;
+  const totalSize = S.catalog.reduce((a, f) => a + (f.size || 0), 0);
+  if (el('sidebar-stats')) {
+    el('sidebar-stats').innerHTML = `
+      <div>${total} files</div>
+      <div>${enc} encrypted &nbsp;·&nbsp; ${bkp} backed up</div>
+      <div>${fmtSize(totalSize)} total</div>`;
+  }
+  if (el('badge-all'))    el('badge-all').textContent    = total || '';
+  if (el('badge-enc'))    el('badge-enc').textContent    = enc || '';
+  if (el('badge-backed')) el('badge-backed').textContent = bkp || '';
+  if (el('badge-starred'))el('badge-starred').textContent= starred || '';
+}
+
+function renderSidebarFolders() {
+  const wrap = el('sidebar-folders');
+  if (!wrap) return;
+  const tags = new Set();
+  S.catalog.forEach(f => (f.tags || []).forEach(t => tags.add(t)));
+  const folders = [...tags].slice(0, 8);
+  const addBtn = `<div class="nav-item nav-add-folder" onclick="createVirtualFolder()">
+    <span class="nav-icon" style="color:var(--cyan);">+</span><span class="nav-label" style="color:var(--cyan);">New Folder</span></div>`;
+  if (!folders.length) { wrap.innerHTML = addBtn; return; }
+  wrap.innerHTML = folders.map(t =>
+    `<div class="nav-item" onclick="setView2('tag:${esc(t)}')">
+      <span class="nav-icon" style="font-size:10px;width:14px;height:14px;background:var(--cyan);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"></span>
+      <span class="nav-label">${esc(t)}</span><span class="nav-badge">${S.catalog.filter(f=>(f.tags||[]).includes(t)).length}</span>
+    </div>`).join('') + addBtn;
+}
+
+function openReportModal() {
+  toast('To report a problem, use the Ask AI panel or email support. Thank you!', 'ok');
+}
+
+function showBizModal(feature) {
+  toast(`${feature} is available in the Business Version — self-hosted download coming soon.`, 'ok');
 }
 
 // ── FILE RENDERING ────────────────────────────────────────────────
@@ -1644,13 +1834,26 @@ function renderFiles() {
   const grid = el('file-grid');
   if (!grid) return;
 
-  const protFilter = el('filter-protection') ? el('filter-protection').value : 'all';
-  const sortBy     = el('sort-by')           ? el('sort-by').value           : 'name';
-  const searchTerm = el('search-input')      ? el('search-input').value.trim().toLowerCase() : '';
+  const activePill = document.querySelector('.filter-pill.active');
+  const protFilter = activePill ? activePill.dataset.prot : 'all';
+  const sortBy     = el('sort-by') ? el('sort-by').value : 'name';
+  const searchTerm = el('search-input') ? el('search-input').value.trim().toLowerCase() : '';
 
   let files = [...S.catalog];
 
-  // Filter
+  // Sidebar view filter
+  if (S2view === 'encrypted') files = files.filter(f => f.protection >= 1);
+  else if (S2view === 'backed') files = files.filter(f => f.protection === 2);
+  else if (S2view === 'starred') files = files.filter(f => f.starred);
+  else if (S2view === 'recent') {
+    const week = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    files = files.filter(f => (f.modified || 0) >= week || (f.added || 0) >= week);
+  } else if (S2view && S2view.startsWith('tag:')) {
+    const tag = S2view.slice(4);
+    files = files.filter(f => (f.tags || []).includes(tag));
+  }
+
+  // Protection pill filter
   if (protFilter !== 'all') {
     const lvl = parseInt(protFilter);
     files = files.filter(f => f.protection === lvl);
@@ -1663,6 +1866,9 @@ function renderFiles() {
       (f.tags || []).some(t => t.toLowerCase().includes(searchTerm))
     );
   }
+
+  // Update count label
+  if (el('file-count-label')) el('file-count-label').textContent = files.length + ' item' + (files.length !== 1 ? 's' : '');
 
   // Sort
   files.sort((a, b) => {
@@ -1687,21 +1893,29 @@ function renderFiles() {
   grid.innerHTML = files.map(f => {
     const displayName = S.settings.showExtensions ? f.name : f.name.replace(/\.[^.]+$/, '');
     const selected    = S.selectedFiles.has(f.id);
-    const tagsHtml    = (f.tags || []).map(t => '<span class="tag-pill">' + esc(t) + '</span>').join('');
+    const starred     = f.starred ? ' starred' : '';
+    const tagsHtml    = (f.tags || []).slice(0,3).map(t => `<span class="tag-pill">${esc(t)}</span>`).join('');
+    if (!isGrid) {
+      return `<div class="file-card file-card-list${selected ? ' selected' : ''}" data-id="${f.id}"
+        onclick="fileClick(event,'${f.id}')" oncontextmenu="showCtxMenu(event,'${f.id}')">
+        <span class="file-icon-lg">${getFileIcon(f.name)}</span>
+        <div class="fc-info">
+          <div class="file-name">${esc(displayName)}</div>
+          <div class="file-meta">${esc(fmtSize(f.size))} · ${esc(fmtDate(f.modified))}</div>
+          ${tagsHtml ? `<div class="file-tags">${tagsHtml}</div>` : ''}
+        </div>
+        <div>${protBadge(f.protection)}</div>
+        <button class="star-btn${starred}" onclick="event.stopPropagation();toggleStar('${f.id}')" title="Star">★</button>
+      </div>`;
+    }
     return `<div class="file-card${selected ? ' selected' : ''}" data-id="${f.id}"
-      onclick="fileClick(event,'${f.id}')"
-      oncontextmenu="showCtxMenu(event,'${f.id}')">
-      <div class="file-icon">${getFileIcon(f.name)}</div>
+      onclick="fileClick(event,'${f.id}')" oncontextmenu="showCtxMenu(event,'${f.id}')">
+      <div class="prot-badge-corner">${protBadge(f.protection)}</div>
+      <div class="file-icon-lg">${getFileIcon(f.name)}</div>
       <div class="file-name">${esc(displayName)}</div>
-      ${isGrid ? '' : '<div class="file-meta">' + esc(fmtSize(f.size)) + ' · ' + esc(fmtDate(f.modified)) + '</div>'}
-      <div>${protBadge(f.protection)}</div>
-      ${tagsHtml ? '<div class="file-tags">' + tagsHtml + '</div>' : ''}
-      ${!isGrid ? '' : '<div class="file-meta">' + esc(fmtSize(f.size)) + '</div>'}
-      <div class="file-actions">
-        <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();openTagsModal('${f.id}')" title="Tags">🏷️</button>
-        <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();encryptFile('${f.id}')" title="Encrypt">🔒</button>
-        <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();showFileInfo('${f.id}')" title="Info">ℹ️</button>
-      </div>
+      <div class="file-meta">${esc(fmtSize(f.size))} · ${esc(fmtDate(f.modified))}</div>
+      ${tagsHtml ? `<div class="file-tags">${tagsHtml}</div>` : ''}
+      <button class="star-btn${starred}" onclick="event.stopPropagation();toggleStar('${f.id}')" title="Star">★</button>
     </div>`;
   }).join('');
 
