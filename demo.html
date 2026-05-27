@@ -64,6 +64,14 @@ html, body {
   text-decoration: none; transition: border-color 0.15s, color 0.15s;
 }
 #skip-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+#pause-btn, #replay-btn {
+  background: none; border: 1px solid var(--border); border-radius: 7px;
+  color: var(--muted); font-size: 15px; cursor: pointer;
+  padding: 5px 10px; transition: border-color 0.2s, color 0.2s;
+  line-height: 1;
+}
+#pause-btn:hover, #replay-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+#pause-btn.paused { border-color: var(--purple); color: #a78bfa; }
 
 /* ── PROGRESS BAR ── */
 #progress-bar-wrap {
@@ -419,6 +427,7 @@ html, body {
   /* Shrink "Skip to App →" to "App →" */
   #skip-btn { font-size: 0; padding: 5px 9px; gap: 0; min-width: 0; }
   #skip-btn::after { content: 'App \2192'; font-size: 11px; font-weight: 600; color: var(--text); }
+  #pause-btn, #replay-btn { font-size: 13px; padding: 4px 8px; }
 
   /* ── LIVE DEMO PILL ── */
   #live-pill { font-size: 9px; padding: 3px 7px; gap: 4px; }
@@ -526,6 +535,8 @@ html, body {
       <div class="live-dot"></div>
       LIVE DEMO
     </div>
+    <button id="pause-btn" onclick="togglePause()" title="Pause / Resume">⏸</button>
+    <button id="replay-btn" onclick="replayDemo()" title="Replay from start">↺</button>
     <a id="skip-btn" href="index.html">Skip to App →</a>
   </div>
 </div>
@@ -743,6 +754,10 @@ const SCENES = [
 
 let currentScene = 0;
 let loopStart = Date.now();
+let sceneTimer = null;
+let isPaused = false;
+let pausedAt = 0;       // ms elapsed in current scene when paused
+let sceneStarted = 0;   // Date.now() when current scene started
 const TOTAL_DURATION = SCENES.reduce((a, s) => a + s.duration, 0);
 
 function showScene(idx) {
@@ -752,21 +767,57 @@ function showScene(idx) {
   if (el) el.classList.add('active');
 }
 
-function runScene(idx) {
+function runScene(idx, resumeOffset) {
   currentScene = idx;
+  sceneStarted = Date.now() - (resumeOffset || 0);
   showScene(idx);
-  SCENE_RUNNERS[SCENES[idx].id] && SCENE_RUNNERS[idx]();
-  setTimeout(() => {
-    runScene((idx + 1) % SCENES.length);
-    if ((idx + 1) % SCENES.length === 0) loopStart = Date.now();
-  }, SCENES[idx].duration);
+  if (!resumeOffset) SCENE_RUNNERS[idx] && SCENE_RUNNERS[idx]();
+  const remaining = SCENES[idx].duration - (resumeOffset || 0);
+  sceneTimer = setTimeout(() => {
+    const next = (idx + 1) % SCENES.length;
+    if (next === 0) loopStart = Date.now();
+    runScene(next);
+  }, remaining);
+}
+
+function togglePause() {
+  const btn = document.getElementById('pause-btn');
+  if (!isPaused) {
+    isPaused = true;
+    pausedAt = Date.now() - sceneStarted;
+    clearTimeout(sceneTimer);
+    btn.textContent = '▶';
+    btn.classList.add('paused');
+    btn.title = 'Resume';
+  } else {
+    isPaused = false;
+    btn.textContent = '⏸';
+    btn.classList.remove('paused');
+    btn.title = 'Pause';
+    runScene(currentScene, pausedAt);
+  }
+}
+
+function replayDemo() {
+  isPaused = false;
+  clearTimeout(sceneTimer);
+  const btn = document.getElementById('pause-btn');
+  btn.textContent = '⏸';
+  btn.classList.remove('paused');
+  btn.title = 'Pause';
+  loopStart = Date.now();
+  runScene(0);
 }
 
 // Progress bar
 function tickProgress() {
-  const elapsed = Date.now() - loopStart;
-  const pct = Math.min((elapsed / TOTAL_DURATION) * 100, 100);
-  document.getElementById('progress-bar').style.width = pct + '%';
+  if (!isPaused) {
+    const sceneElapsed = SCENES.slice(0, currentScene).reduce((a, s) => a + s.duration, 0);
+    const withinScene = Math.min(Date.now() - sceneStarted, SCENES[currentScene].duration);
+    const elapsed = sceneElapsed + withinScene;
+    const pct = Math.min((elapsed / TOTAL_DURATION) * 100, 100);
+    document.getElementById('progress-bar').style.width = pct + '%';
+  }
   requestAnimationFrame(tickProgress);
 }
 requestAnimationFrame(tickProgress);
