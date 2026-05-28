@@ -2201,15 +2201,10 @@ function setView(view) {
 }
 
 function fileClick(e, fileId) {
-  if (e.ctrlKey || e.metaKey || e.shiftKey) {
-    if (S.selectedFiles.has(fileId)) S.selectedFiles.delete(fileId);
-    else S.selectedFiles.add(fileId);
-    renderFiles();
-  } else {
-    S.selectedFiles.clear();
-    S.selectedFiles.add(fileId);
-    renderFiles();
-  }
+  // Always toggle — no need to hold Shift/Ctrl
+  if (S.selectedFiles.has(fileId)) S.selectedFiles.delete(fileId);
+  else S.selectedFiles.add(fileId);
+  renderFiles();
 }
 
 function selectAll() {
