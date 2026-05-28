@@ -883,7 +883,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
       <div class="page" id="page-ai">
         <div class="page-header">
           <h1 class="page-title">🤖 Ask AI</h1>
-          <p class="page-sub">Powered by Lightchain AIVM — your wallet pays ~0.02 LCAI per request.</p>
+          <p class="page-sub">Powered by Lightchain AIVM — no wallet needed for AI.</p>
         </div>
         <div class="card" style="margin-bottom:16px;">
           <div class="card-title">✨ AI Features</div>
@@ -1281,7 +1281,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 'use strict';
 
 // ── CONSTANTS ─────────────────────────────────────────────────────
-const AIVM_GATEWAY  = 'https://chat-api.mainnet.lightchain.ai';
+const AIVM_GATEWAY  = 'https://web-production-0ccfe.up.railway.app/api/aivm';
 const AIVM_RELAY    = 'wss://relay.mainnet.lightchain.ai/ws';
 const AIVM_JOB_REG  = '0xfB15F90298e4CcD7106E76fFB5e520315cC42B0b';
 const AIVM_JOB_FEE  = 20000000000000000n;
@@ -1780,113 +1780,18 @@ async function getAivmJWT() {
 // ── AIVM INFERENCE (full OrcaLearn-style on-chain flow) ───────────
 async function aivmInference(prompt, onProgress) {
   const prog = onProgress || (() => {});
-  if (!S.addr || !S.signer) throw new Error('Connect your wallet to use AI');
-
-  prog('Authenticating with Lightchain AIVM…');
-  const jwt = await getAivmJWT();
-  const hdrs = { 'Authorization': 'Bearer ' + jwt, 'Accept': 'application/json', 'Content-Type': 'application/json' };
-
-  prog('Selecting AI worker…');
-  const mr = await fetch(AIVM_GATEWAY + '/api/models');
-  if (!mr.ok) throw new Error('Workers are busy — try again');
-  const { models = [] } = await mr.json();
-  if (!models.length) throw new Error('No workers available');
-  const model = models.find(m => m.name === 'llama3-8b') || models[0];
-
-  const sr = await fetch(AIVM_GATEWAY + '/api/sessions/select', {
-    method: 'POST', headers: hdrs, body: JSON.stringify({ modelId: model.id })
+  prog('Calling Lightchain AI…');
+  const res = await fetch('https://web-production-0ccfe.up.railway.app/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt })
   });
-  if (!sr.ok) throw new Error('Worker selection failed');
-  const sel = await sr.json();
-
-  const sessionKey = crypto.getRandomValues(new Uint8Array(32));
-  const encWorker   = await ecdhWrap(sessionKey, decodePubkey(sel.workerEncryptionKey));
-  const encDisputer = await ecdhWrap(sessionKey, decodePubkey(sel.disputerEncryptionKey));
-
-  const pr = await fetch(AIVM_GATEWAY + '/api/sessions/prepare', {
-    method: 'POST', headers: hdrs,
-    body: JSON.stringify({ modelId: model.id, encWorkerKey: bytesToBase64(encWorker), encDisputerKey: bytesToBase64(encDisputer) })
-  });
-  if (!pr.ok) throw new Error('Session prepare failed');
-  const prep = await pr.json();
-
-  prog('Confirm session in Trust Wallet… (no LCAI cost)');
-  const provider  = new ethers.BrowserProvider(window.ethereum);
-  const signer    = await provider.getSigner();
-  const contract  = new ethers.Contract(AIVM_JOB_REG, AIVM_ABI, signer);
-  const iface     = new ethers.Interface(AIVM_ABI);
-  const paramsHash = '0x' + model.id.replace(/^0x/i, '').padStart(64, '0');
-
-  const cseTx  = await contract.createSession(paramsHash, prep.worker, bytesToHex(encWorker), bytesToHex(encDisputer), prep.signature, BigInt(prep.expiry), { value: 0n });
-  prog('Waiting for session confirmation…');
-  const cseR   = await cseTx.wait();
-
-  let sessionId;
-  for (const log of cseR.logs) {
-    try { const p = iface.parseLog(log); if (p?.name === 'SessionCreated') { sessionId = p.args.sessionId; break; } } catch {}
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    throw new Error('AI error ' + res.status + (txt ? ': ' + txt : ''));
   }
-  if (sessionId == null) throw new Error('SessionCreated event not found');
-
-  let relayToken = null;
-  const tokDeadline = Date.now() + 30000;
-  while (Date.now() < tokDeadline && !relayToken) {
-    const tr = await fetch(AIVM_GATEWAY + '/api/sessions/' + sessionId + '/token', { headers: hdrs });
-    if (tr.ok) { const td = await tr.json(); if (td.token) { relayToken = td.token; break; } }
-    await sleep(1000);
-  }
-  if (!relayToken) throw new Error('Relay token not ready');
-
-  const chunks = [];
-  const ws = new WebSocket(AIVM_RELAY + '?token=' + encodeURIComponent(relayToken));
-  await new Promise((res, rej) => {
-    const t = setTimeout(() => rej(new Error('WebSocket timeout')), 15000);
-    ws.onopen  = () => { clearTimeout(t); res(); };
-    ws.onerror = () => { clearTimeout(t); rej(new Error('WebSocket error')); };
-  });
-  ws.onmessage = async ev => {
-    try {
-      const frame = JSON.parse(ev.data);
-      if (frame.payload) {
-        const blob = base64ToBytes(frame.payload);
-        const pt   = await aesDecryptResponse(sessionKey, blob);
-        chunks.push(new TextDecoder().decode(pt));
-      }
-    } catch {}
-  };
-
-  prog('Confirm job in Trust Wallet… (costs ~0.02 LCAI)');
-  const cipher = await aesEncryptPrompt(sessionKey, new TextEncoder().encode(prompt));
-  const br = await fetch(AIVM_GATEWAY + '/api/blobs', {
-    method: 'POST', headers: hdrs, body: JSON.stringify({ data: bytesToBase64(cipher) })
-  });
-  if (!br.ok) throw new Error('Blob upload failed');
-  const { blobHashes = [] } = await br.json();
-  if (!blobHashes.length) throw new Error('No blob hash returned');
-  const promptHash = '0x' + blobHashes[0].replace(/^0x/i, '').padStart(64, '0');
-
-  const sjTx = await contract.submitJob(sessionId, promptHash, { value: AIVM_JOB_FEE });
-  prog('AI is generating… (1-2 minutes)');
-  await sjTx.wait();
-
-  const jobCompletedTopic = ethers.id('JobCompleted(uint256,address,bytes32,bytes32)');
-  const deadline = Date.now() + 180000;
-  let done = false;
-  while (Date.now() < deadline && !done) {
-    await sleep(3000);
-    try {
-      const logs = await provider.getLogs({
-        address: AIVM_JOB_REG,
-        topics: [jobCompletedTopic],
-        fromBlock: 'latest'
-      });
-      if (logs.length) done = true;
-    } catch {}
-    if (chunks.length) done = true;
-  }
-  ws.close();
-  const result = chunks.join('').trim();
-  if (!result) throw new Error('No response from AIVM worker');
-  return result;
+  const data = await res.json();
+  return data.reply || '';
 }
 
 // ── FILE ENCRYPTION (local AES-256-GCM) ───────────────────────────
@@ -2535,7 +2440,6 @@ function saveFileTags() {
 
 // ── AI TAGGING ────────────────────────────────────────────────────
 async function getAITags(fileName, fileType) {
-  if (!S.addr || !S.signer) throw new Error('Connect your wallet to use AI features.');
   const prompt = 'You are a file organization assistant. Given a filename and type, return 3-5 concise tags that describe the file, comma-separated. No explanations — just the tags.\n\nFilename: ' + fileName + '\nType: ' + (fileType || 'unknown') + '\n\nTags:';
   const result = await aivmInference(prompt, msg => console.log('[AIVM]', msg));
   return result.split(',').map(t => t.trim().toLowerCase()).filter(t => t.length > 0 && t.length < 30).slice(0, 5);
@@ -2543,7 +2447,6 @@ async function getAITags(fileName, fileType) {
 
 async function aiTagFile() {
   if (!canUseAI()) { closeModal('modal-tags'); openPaymentModal(); return; }
-  if (!S.addr) { toast('Connect your wallet to use AI.', 'err'); return; }
   const f = S.catalog.find(x => x.id === _tagsTargetId);
   if (!f) return;
   const sugBox = el('ai-tag-suggestions');
@@ -2565,7 +2468,6 @@ function addSuggestedTag(tag) {
 
 async function aiTagSingle(fileId) {
   if (!canUseAI()) { openPaymentModal(); return; }
-  if (!S.addr) { toast('Connect your wallet to use AI.', 'err'); return; }
   const f = S.catalog.find(x => x.id === fileId);
   if (!f) return;
   toast('🤖 AI tagging ' + f.name + '…');
@@ -2590,7 +2492,6 @@ async function doSummary() {
   const text = el('summary-input').value.trim();
   if (!text) { toast('Paste some document text first.', 'err'); return; }
   if (!canUseAI()) { closeModal('modal-summary'); openPaymentModal(); return; }
-  if (!S.addr) { toast('Connect your wallet to use AI.', 'err'); return; }
   const btn = el('btn-summarize');
   btn.disabled = true; btn.textContent = '⏳ Summarizing…';
   const result = el('summary-result');
@@ -2604,7 +2505,7 @@ async function doSummary() {
   } catch(e) {
     result.innerHTML = '<div class="warn-box">Error: ' + esc(e.message) + '</div>';
   } finally {
-    btn.disabled = false; btn.textContent = '🤖 Summarize (~0.02 LCAI)';
+    btn.disabled = false; btn.textContent = '🤖 Summarize';
   }
 }
 
@@ -2614,7 +2515,6 @@ async function sendPageAI() {
   const msg   = input.value.trim();
   if (!msg) return;
   if (!canUseAI()) { openPaymentModal(); return; }
-  if (!S.addr) { toast('Connect your wallet to use AI.', 'err'); return; }
   input.value = '';
   const msgs = el('page-ai-messages');
   msgs.innerHTML += '<div class="ai-msg user">' + esc(msg) + '</div>';
