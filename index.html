@@ -348,7 +348,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 .ai-fab:hover { transform: scale(1.04); box-shadow: 0 6px 32px rgba(0,212,255,0.6); }
 .ai-fab-text { font-size: 14px; font-weight: 800; color: #000; }
 .ai-panel {
-  position: fixed; bottom: 88px; right: 24px; width: 480px; height: 560px;
+  position: fixed; bottom: 88px; right: 24px; width: 560px; height: 640px;
   min-width: 360px; min-height: 400px; max-width: 780px; max-height: 90vh;
   background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
   box-shadow: 0 8px 40px rgba(0,0,0,0.5); z-index: 400; display: none; flex-direction: column;
@@ -364,8 +364,6 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 .ai-panel-sub { font-size: 0.85rem; color: var(--muted); }
 .ai-panel-close { margin-left: auto; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px; padding: 3px; }
 .ai-panel-close:hover { color: var(--text); }
-.ai-drag-handle { position: absolute; top: 0; left: 0; width: 28px; height: 28px; cursor: nw-resize; display: flex; align-items: center; justify-content: center; color: var(--muted); opacity: .45; border-radius: 16px 0 0 0; z-index: 5; user-select: none; font-size: 0.8rem; }
-.ai-drag-handle:hover { opacity: 1; }
 .ai-messages { padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; overscroll-behavior: contain; }
 .ai-msg { padding: 11px 14px; border-radius: 12px; font-size: 0.95rem; line-height: 1.6; max-width: 88%; white-space: pre-wrap; word-break: break-word; }
 .ai-msg.bot { background: var(--surface2); border: 1px solid var(--border); align-self: flex-start; }
@@ -1039,7 +1037,6 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
   <span class="ai-fab-text">Ask AI</span>
 </button>
 <div class="ai-panel" id="aiPanel">
-  <div class="ai-drag-handle" id="aiDragHandle" title="Drag to resize">⤡</div>
   <div class="ai-panel-header" id="aiPanelHeader">
     <span style="font-size:22px;">🤖</span>
     <div>
