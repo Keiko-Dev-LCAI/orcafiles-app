@@ -1281,32 +1281,6 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 'use strict';
 
 // ── CONSTANTS ─────────────────────────────────────────────────────
-const AIVM_GATEWAY  = 'https://web-production-0ccfe.up.railway.app/api/aivm';
-const AIVM_RELAY    = 'wss://relay.mainnet.lightchain.ai/ws';
-const AIVM_JOB_REG  = '0xfB15F90298e4CcD7106E76fFB5e520315cC42B0b';
-const AIVM_JOB_FEE  = 20000000000000000n;
-const AIVM_CHAIN_ID = 9200;
-const AIVM_CHAIN_HEX = '0x23F0';
-const AIVM_ABI = [
-  {name:'createSession',type:'function',stateMutability:'payable',
-   inputs:[{name:'paramsHash',type:'bytes32'},{name:'worker',type:'address'},
-           {name:'encWorkerKey',type:'bytes'},{name:'ephemeralPubKey',type:'bytes'},
-           {name:'initState',type:'bytes'},{name:'expiry',type:'uint256'}],
-   outputs:[{name:'sessionId',type:'uint256'}]},
-  {name:'submitJob',type:'function',stateMutability:'payable',
-   inputs:[{name:'sessionId',type:'uint256'},{name:'promptHash',type:'bytes32'}],
-   outputs:[{name:'jobId',type:'uint256'}]},
-  {anonymous:false,name:'SessionCreated',type:'event',
-   inputs:[{indexed:true,name:'sessionId',type:'uint256'},{indexed:true,name:'user',type:'address'},
-           {indexed:true,name:'paramsHash',type:'bytes32'},{indexed:false,name:'worker',type:'address'},
-           {indexed:false,name:'encWorkerKey',type:'bytes'},{indexed:false,name:'ephemeralPubKey',type:'bytes'}]},
-  {anonymous:false,name:'JobSubmitted',type:'event',
-   inputs:[{indexed:true,name:'jobId',type:'uint256'},{indexed:true,name:'sessionId',type:'uint256'},
-           {indexed:false,name:'worker',type:'address'}]},
-  {anonymous:false,name:'JobCompleted',type:'event',
-   inputs:[{indexed:true,name:'jobId',type:'uint256'},{indexed:true,name:'worker',type:'address'},
-           {indexed:false,name:'responseHash',type:'bytes32'},{indexed:false,name:'ciphertextHash',type:'bytes32'}]}
-];
 const LC_RPC        = 'https://rpc.mainnet.lightchain.ai';
 const PAYMENT_ADDR  = '0x1F899FaD2C8BD70b6eF356ae6cC3c0abDbB15EB5';
 const KEIKO_WALLET  = '0x1F899FaD2C8BD70b6eF356ae6cC3c0abDbB15EB5';
@@ -1339,7 +1313,6 @@ const S = {
   wizardData: {}
 };
 let _lcaiPrice = null, _lcaiPriceTs = 0;
-let _aivmJWT = null, _aivmJWTExp = 0;
 let _ctxTargetId = null;
 let _tagsTargetId = null;
 let _currentTags = [];
@@ -1758,26 +1731,7 @@ async function aesDecryptResponse(sessionKey, blob) {
   return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:nonce}, aesKey, ct));
 }
 
-// ── AIVM JWT ──────────────────────────────────────────────────────
-async function getAivmJWT() {
-  if (_aivmJWT && Date.now() < _aivmJWTExp - 30000) return _aivmJWT;
-  if (!S.addr || !S.signer) throw new Error('Connect your wallet first');
-  const r = await fetch(AIVM_GATEWAY + '/api/auth/challenge?address=' + S.addr);
-  if (!r.ok) throw new Error('AIVM auth failed (' + r.status + ')');
-  const { message } = await r.json();
-  const signature = await S.signer.signMessage(message);
-  const r2 = await fetch(AIVM_GATEWAY + '/api/auth/verify', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, signature })
-  });
-  if (!r2.ok) throw new Error('AIVM verify failed (' + r2.status + ')');
-  const d2 = await r2.json();
-  _aivmJWT = d2.token;
-  _aivmJWTExp = new Date(d2.expiresAt).getTime();
-  return _aivmJWT;
-}
-
-// ── AIVM INFERENCE (full OrcaLearn-style on-chain flow) ───────────
+// ── AIVM INFERENCE ────────────────────────────────────────────────
 async function aivmInference(prompt, onProgress) {
   const prog = onProgress || (() => {});
   prog('Calling Lightchain AI…');
