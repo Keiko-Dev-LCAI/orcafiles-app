@@ -348,8 +348,8 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 .ai-fab:hover { transform: scale(1.04); box-shadow: 0 6px 32px rgba(0,212,255,0.6); }
 .ai-fab-text { font-size: 14px; font-weight: 800; color: #000; }
 .ai-panel {
-  position: fixed; bottom: 88px; right: 24px; width: 560px; height: 640px;
-  min-width: 360px; min-height: 400px; max-width: 780px; max-height: 90vh;
+  position: fixed; bottom: 88px; right: 24px; width: 380px; height: 460px;
+  min-width: 280px; min-height: 300px; max-width: 680px; max-height: 84vh;
   background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
   box-shadow: 0 8px 40px rgba(0,0,0,0.5); z-index: 400; display: none; flex-direction: column;
   overflow: hidden; resize: both;
@@ -364,6 +364,9 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 .ai-panel-sub { font-size: 0.85rem; color: var(--muted); }
 .ai-panel-close { margin-left: auto; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px; padding: 3px; }
 .ai-panel-close:hover { color: var(--text); }
+.ai-resize-handle { position: absolute; top: 0; left: 0; width: 28px; height: 28px; cursor: nw-resize; display: flex; align-items: center; justify-content: center; color: var(--muted); opacity: .45; border-radius: 16px 0 0 0; z-index: 5; user-select: none; }
+.ai-resize-handle:hover { opacity: 1; color: var(--cyan); }
+.ai-panel.resizing { user-select: none; }
 .ai-messages { padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; overscroll-behavior: contain; }
 .ai-msg { padding: 11px 14px; border-radius: 12px; font-size: 0.95rem; line-height: 1.6; max-width: 88%; white-space: pre-wrap; word-break: break-word; }
 .ai-msg.bot { background: var(--surface2); border: 1px solid var(--border); align-self: flex-start; }
@@ -1037,6 +1040,16 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
   <span class="ai-fab-text">Ask AI</span>
 </button>
 <div class="ai-panel" id="aiPanel">
+  <div class="ai-resize-handle" id="aiResizeHandle" title="Drag to resize">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <circle cx="3" cy="3"  r="1.2" fill="currentColor"/>
+      <circle cx="9" cy="3"  r="1.2" fill="currentColor"/>
+      <circle cx="3" cy="8"  r="1.2" fill="currentColor"/>
+      <circle cx="9" cy="8"  r="1.2" fill="currentColor"/>
+      <circle cx="3" cy="12" r="1.2" fill="currentColor"/>
+      <circle cx="9" cy="12" r="1.2" fill="currentColor"/>
+    </svg>
+  </div>
   <div class="ai-panel-header" id="aiPanelHeader">
     <span style="font-size:22px;">🤖</span>
     <div>
@@ -2569,36 +2582,54 @@ async function sendAIMessage() {
   updateWalletUI();
 }
 
-// ── DRAG AI PANEL ─────────────────────────────────────────────────
-(function initAIPanelDrag() {
-  document.addEventListener('DOMContentLoaded', () => {
+// ── RESIZE AI PANEL (drag grip upper-left, same as OrcaMint) ──────
+(function() {
+  let resizing = false, startX, startY, startW, startH;
+  document.addEventListener('DOMContentLoaded', function() {
+    const handle = el('aiResizeHandle');
     const panel  = el('aiPanel');
-    if (!panel) return;
-    const header = panel.querySelector('.ai-panel-header');
-    let dragging = false, ox = 0, oy = 0;
+    if (!handle || !panel) return;
 
-    header.addEventListener('mousedown', e => {
-      if (e.target.classList.contains('ai-panel-close')) return;
-      dragging = true;
-      const rect = panel.getBoundingClientRect();
-      panel.style.right  = 'auto';
-      panel.style.bottom = 'auto';
-      panel.style.left   = rect.left + 'px';
-      panel.style.top    = rect.top  + 'px';
-      ox = e.clientX - rect.left;
-      oy = e.clientY - rect.top;
+    handle.addEventListener('mousedown', function(e) {
+      resizing = true;
+      startX = e.clientX; startY = e.clientY;
+      startW = panel.offsetWidth; startH = panel.offsetHeight;
+      panel.classList.add('resizing');
       e.preventDefault();
     });
 
-    document.addEventListener('mousemove', e => {
-      if (!dragging) return;
-      const nx = Math.max(0, Math.min(window.innerWidth  - panel.offsetWidth,  e.clientX - ox));
-      const ny = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, e.clientY - oy));
-      panel.style.left = nx + 'px';
-      panel.style.top  = ny + 'px';
+    document.addEventListener('mousemove', function(e) {
+      if (!resizing) return;
+      const newW = Math.min(680, Math.max(280, startW - (e.clientX - startX)));
+      const newH = Math.min(window.innerHeight * 0.84, Math.max(300, startH - (e.clientY - startY)));
+      panel.style.width  = newW + 'px';
+      panel.style.height = newH + 'px';
     });
 
-    document.addEventListener('mouseup', () => { dragging = false; });
+    document.addEventListener('mouseup', function() {
+      if (!resizing) return;
+      resizing = false;
+      panel.classList.remove('resizing');
+    });
+
+    handle.addEventListener('touchstart', function(e) {
+      const t = e.touches[0];
+      resizing = true;
+      startX = t.clientX; startY = t.clientY;
+      startW = panel.offsetWidth; startH = panel.offsetHeight;
+      e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('touchmove', function(e) {
+      if (!resizing) return;
+      const t = e.touches[0];
+      const newW = Math.min(680, Math.max(280, startW - (t.clientX - startX)));
+      const newH = Math.min(window.innerHeight * 0.84, Math.max(300, startH - (t.clientY - startY)));
+      panel.style.width  = newW + 'px';
+      panel.style.height = newH + 'px';
+    }, { passive: false });
+
+    document.addEventListener('touchend', function() { resizing = false; });
   });
 })();
 
