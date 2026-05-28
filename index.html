@@ -794,6 +794,8 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
             <button class="view-btn" id="btn-list" onclick="setView('list')" title="List view">☰</button>
           </div>
           <button class="btn btn-sm btn-secondary" id="btn-select-all" onclick="selectAll()" style="display:none;">Select All</button>
+          <button class="btn btn-sm btn-secondary" id="btn-deselect-all" onclick="deselectAll()" style="display:none;">Deselect All</button>
+          <button class="btn btn-sm btn-danger" id="btn-delete-selected" onclick="deleteSelected()" style="display:none;">🗑️ Delete Selected (0)</button>
           <button class="btn btn-sm btn-secondary" id="btn-tag-selected" onclick="tagSelected()" style="display:none;">🤖 AI Tag Selected</button>
           <button class="btn btn-sm btn-secondary" onclick="window.print()" id="btn-print" style="display:none;">🖨️ Print Inventory</button>
         </div>
@@ -1974,7 +1976,7 @@ function guessType(name) {
 }
 
 function showToolbar(show) {
-  ['filter-pills','sort-by','view-toggle','btn-select-all','btn-tag-selected','btn-print',
+  ['filter-pills','sort-by','view-toggle','btn-select-all','btn-deselect-all','btn-delete-selected','btn-tag-selected','btn-print',
    'file-count-label','btn-new-folder-top','btn-scan-folder-top','btn-add-files-top'].forEach(id => {
     const e = el(id);
     if (!e) return;
@@ -2067,6 +2069,15 @@ function showProModal(feature) {
 function renderFiles() {
   const grid = el('file-grid');
   if (!grid) return;
+
+  // Update delete selected button count
+  const delBtn = el('btn-delete-selected');
+  if (delBtn) {
+    const n = S.selectedFiles.size;
+    delBtn.textContent = `🗑️ Delete Selected (${n})`;
+    delBtn.style.opacity = n > 0 ? '1' : '0.5';
+  }
+
 
   const activePill = document.querySelector('.filter-pill.active');
   const protFilter = activePill ? activePill.dataset.prot : 'all';
@@ -2199,6 +2210,22 @@ function fileClick(e, fileId) {
 function selectAll() {
   S.catalog.forEach(f => S.selectedFiles.add(f.id));
   renderFiles();
+}
+
+function deselectAll() {
+  S.selectedFiles.clear();
+  renderFiles();
+}
+
+function deleteSelected() {
+  const count = S.selectedFiles.size;
+  if (count === 0) { toast('No files selected.', 'err'); return; }
+  if (!confirm(`Remove ${count} file${count > 1 ? 's' : ''} from your catalog? (Your actual files are NOT deleted from your computer.)`)) return;
+  S.catalog = S.catalog.filter(f => !S.selectedFiles.has(f.id));
+  S.selectedFiles.clear();
+  saveCatalog();
+  renderFiles();
+  toast(`🗑️ Removed ${count} file${count > 1 ? 's' : ''} from catalog.`, 'ok');
 }
 
 async function tagSelected() {
