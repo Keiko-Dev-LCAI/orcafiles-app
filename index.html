@@ -348,31 +348,35 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 .ai-fab:hover { transform: scale(1.04); box-shadow: 0 6px 32px rgba(0,212,255,0.6); }
 .ai-fab-text { font-size: 14px; font-weight: 800; color: #000; }
 .ai-panel {
-  position: fixed; bottom: 88px; right: 24px; width: 420px; max-height: calc(100vh - 120px);
+  position: fixed; bottom: 88px; right: 24px; width: 480px; height: 560px;
+  min-width: 360px; min-height: 400px; max-width: 780px; max-height: 90vh;
   background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
   box-shadow: 0 8px 40px rgba(0,0,0,0.5); z-index: 400; display: none; flex-direction: column;
-  overflow: hidden; resize: both; min-width: 300px; min-height: 280px;
+  overflow: hidden; resize: both;
 }
 .ai-panel.open { display: flex; }
 .ai-panel-header {
-  background: var(--surface2); padding: 13px 16px; display: flex; align-items: center;
+  background: linear-gradient(135deg, var(--surface2), #1a0a3a);
+  padding: 18px 20px; display: flex; align-items: center;
   gap: 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; cursor: move; user-select: none;
 }
-.ai-panel-title { font-weight: 700; font-size: 13px; color: var(--text); }
-.ai-panel-sub { font-size: 11px; color: var(--muted); }
-.ai-panel-close { margin-left: auto; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 17px; padding: 3px; }
+.ai-panel-title { font-weight: 700; font-size: 1.2rem; color: var(--text); }
+.ai-panel-sub { font-size: 0.85rem; color: var(--muted); }
+.ai-panel-close { margin-left: auto; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px; padding: 3px; }
 .ai-panel-close:hover { color: var(--text); }
-.ai-messages { padding: 14px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; overscroll-behavior: contain; }
-.ai-msg { padding: 9px 12px; border-radius: 10px; font-size: 13px; line-height: 1.6; max-width: 88%; white-space: pre-wrap; word-break: break-word; }
+.ai-drag-handle { position: absolute; top: 0; left: 0; width: 28px; height: 28px; cursor: nw-resize; display: flex; align-items: center; justify-content: center; color: var(--muted); opacity: .45; border-radius: 16px 0 0 0; z-index: 5; user-select: none; font-size: 0.8rem; }
+.ai-drag-handle:hover { opacity: 1; }
+.ai-messages { padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; overscroll-behavior: contain; }
+.ai-msg { padding: 11px 14px; border-radius: 12px; font-size: 0.95rem; line-height: 1.6; max-width: 88%; white-space: pre-wrap; word-break: break-word; }
 .ai-msg.bot { background: var(--surface2); border: 1px solid var(--border); align-self: flex-start; }
 .ai-msg.user { background: rgba(0,212,255,0.12); border: 1px solid rgba(0,212,255,0.2); align-self: flex-end; color: var(--cyan); }
-.ai-input-row { padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
+.ai-input-row { padding: 12px 14px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
 .ai-input {
   flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 8px;
-  padding: 8px 11px; color: var(--text); font-size: 13px; font-family: inherit; outline: none; resize: none; height: 40px;
+  padding: 10px 13px; color: var(--text); font-size: 1rem; font-family: inherit; outline: none; resize: none; height: 44px;
 }
 .ai-input:focus { border-color: var(--cyan); }
-.ai-send { background: var(--cyan); border: none; color: #000; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; font-family: inherit; }
+.ai-send { background: var(--cyan); border: none; color: #000; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.95rem; font-family: inherit; }
 .ai-send:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ── PAYMENT MODAL EXTRAS ───────────────────────────────────────── */
@@ -1035,8 +1039,9 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
   <span class="ai-fab-text">Ask AI</span>
 </button>
 <div class="ai-panel" id="aiPanel">
-  <div class="ai-panel-header">
-    <span style="font-size:18px;">🤖</span>
+  <div class="ai-drag-handle" id="aiDragHandle" title="Drag to resize">⤡</div>
+  <div class="ai-panel-header" id="aiPanelHeader">
+    <span style="font-size:22px;">🤖</span>
     <div>
       <div class="ai-panel-title">OrcaFiles AI</div>
       <div class="ai-panel-sub">Powered by Lightchain AIVM</div>
