@@ -2870,6 +2870,7 @@ async function init() {
     el('ai-fab').style.display = '';
     loadSettingsUI();
     renderFiles();
+    if (S.catalog.length > 0) showToolbar(true);
   }
 
   // Auto-reconnect wallet if previously connected
