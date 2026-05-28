@@ -1281,9 +1281,32 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 'use strict';
 
 // ── CONSTANTS ─────────────────────────────────────────────────────
-const AIVM_GATEWAY  = 'https://web-production-0ccfe.up.railway.app/api/aivm';
+const AIVM_GATEWAY  = 'https://chat-api.mainnet.lightchain.ai';
+const AIVM_RELAY    = 'wss://relay.mainnet.lightchain.ai/ws';
+const AIVM_JOB_REG  = '0xfB15F90298e4CcD7106E76fFB5e520315cC42B0b';
+const AIVM_JOB_FEE  = 20000000000000000n;
 const AIVM_CHAIN_ID = 9200;
 const AIVM_CHAIN_HEX = '0x23F0';
+const AIVM_ABI = [
+  {name:'createSession',type:'function',stateMutability:'payable',
+   inputs:[{name:'paramsHash',type:'bytes32'},{name:'worker',type:'address'},
+           {name:'encWorkerKey',type:'bytes'},{name:'ephemeralPubKey',type:'bytes'},
+           {name:'initState',type:'bytes'},{name:'expiry',type:'uint256'}],
+   outputs:[{name:'sessionId',type:'uint256'}]},
+  {name:'submitJob',type:'function',stateMutability:'payable',
+   inputs:[{name:'sessionId',type:'uint256'},{name:'promptHash',type:'bytes32'}],
+   outputs:[{name:'jobId',type:'uint256'}]},
+  {anonymous:false,name:'SessionCreated',type:'event',
+   inputs:[{indexed:true,name:'sessionId',type:'uint256'},{indexed:true,name:'user',type:'address'},
+           {indexed:true,name:'paramsHash',type:'bytes32'},{indexed:false,name:'worker',type:'address'},
+           {indexed:false,name:'encWorkerKey',type:'bytes'},{indexed:false,name:'ephemeralPubKey',type:'bytes'}]},
+  {anonymous:false,name:'JobSubmitted',type:'event',
+   inputs:[{indexed:true,name:'jobId',type:'uint256'},{indexed:true,name:'sessionId',type:'uint256'},
+           {indexed:false,name:'worker',type:'address'}]},
+  {anonymous:false,name:'JobCompleted',type:'event',
+   inputs:[{indexed:true,name:'jobId',type:'uint256'},{indexed:true,name:'worker',type:'address'},
+           {indexed:false,name:'responseHash',type:'bytes32'},{indexed:false,name:'ciphertextHash',type:'bytes32'}]}
+];
 const LC_RPC        = 'https://rpc.mainnet.lightchain.ai';
 const PAYMENT_ADDR  = '0x1F899FaD2C8BD70b6eF356ae6cC3c0abDbB15EB5';
 const KEIKO_WALLET  = '0x1F899FaD2C8BD70b6eF356ae6cC3c0abDbB15EB5';
@@ -1316,6 +1339,7 @@ const S = {
   wizardData: {}
 };
 let _lcaiPrice = null, _lcaiPriceTs = 0;
+let _aivmJWT = null, _aivmJWTExp = 0;
 let _ctxTargetId = null;
 let _tagsTargetId = null;
 let _currentTags = [];
@@ -1734,29 +1758,135 @@ async function aesDecryptResponse(sessionKey, blob) {
   return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:nonce}, aesKey, ct));
 }
 
-// ── AIVM CALL ─────────────────────────────────────────────────────
-async function aivmCall(prompt) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 90000);
-  try {
-    const res = await fetch(AIVM_GATEWAY, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'lightchain-aivm', messages: [{ role: 'user', content: prompt }], max_tokens: 400 }),
-      signal: controller.signal
-    });
-    if (!res.ok) throw new Error('AIVM error ' + res.status);
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content || data.content || data.result || '';
-  } finally {
-    clearTimeout(timer);
-  }
+// ── AIVM JWT ──────────────────────────────────────────────────────
+async function getAivmJWT() {
+  if (_aivmJWT && Date.now() < _aivmJWTExp - 30000) return _aivmJWT;
+  if (!S.addr || !S.signer) throw new Error('Connect your wallet first');
+  const r = await fetch(AIVM_GATEWAY + '/api/auth/challenge?address=' + S.addr);
+  if (!r.ok) throw new Error('AIVM auth failed (' + r.status + ')');
+  const { message } = await r.json();
+  const signature = await S.signer.signMessage(message);
+  const r2 = await fetch(AIVM_GATEWAY + '/api/auth/verify', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, signature })
+  });
+  if (!r2.ok) throw new Error('AIVM verify failed (' + r2.status + ')');
+  const d2 = await r2.json();
+  _aivmJWT = d2.token;
+  _aivmJWTExp = new Date(d2.expiresAt).getTime();
+  return _aivmJWT;
 }
 
-// ── AIVM INFERENCE (thin wrapper — same signature as callers expect) ──
+// ── AIVM INFERENCE (full OrcaLearn-style on-chain flow) ───────────
 async function aivmInference(prompt, onProgress) {
-  if (onProgress) onProgress('Calling Lightchain AIVM…');
-  return await aivmCall(prompt);
+  const prog = onProgress || (() => {});
+  if (!S.addr || !S.signer) throw new Error('Connect your wallet to use AI');
+
+  prog('Authenticating with Lightchain AIVM…');
+  const jwt = await getAivmJWT();
+  const hdrs = { 'Authorization': 'Bearer ' + jwt, 'Accept': 'application/json', 'Content-Type': 'application/json' };
+
+  prog('Selecting AI worker…');
+  const mr = await fetch(AIVM_GATEWAY + '/api/models');
+  if (!mr.ok) throw new Error('Workers are busy — try again');
+  const { models = [] } = await mr.json();
+  if (!models.length) throw new Error('No workers available');
+  const model = models.find(m => m.name === 'llama3-8b') || models[0];
+
+  const sr = await fetch(AIVM_GATEWAY + '/api/sessions/select', {
+    method: 'POST', headers: hdrs, body: JSON.stringify({ modelId: model.id })
+  });
+  if (!sr.ok) throw new Error('Worker selection failed');
+  const sel = await sr.json();
+
+  const sessionKey = crypto.getRandomValues(new Uint8Array(32));
+  const encWorker   = await ecdhWrap(sessionKey, decodePubkey(sel.workerEncryptionKey));
+  const encDisputer = await ecdhWrap(sessionKey, decodePubkey(sel.disputerEncryptionKey));
+
+  const pr = await fetch(AIVM_GATEWAY + '/api/sessions/prepare', {
+    method: 'POST', headers: hdrs,
+    body: JSON.stringify({ modelId: model.id, encWorkerKey: bytesToBase64(encWorker), encDisputerKey: bytesToBase64(encDisputer) })
+  });
+  if (!pr.ok) throw new Error('Session prepare failed');
+  const prep = await pr.json();
+
+  prog('Confirm session in Trust Wallet… (no LCAI cost)');
+  const provider  = new ethers.BrowserProvider(window.ethereum);
+  const signer    = await provider.getSigner();
+  const contract  = new ethers.Contract(AIVM_JOB_REG, AIVM_ABI, signer);
+  const iface     = new ethers.Interface(AIVM_ABI);
+  const paramsHash = '0x' + model.id.replace(/^0x/i, '').padStart(64, '0');
+
+  const cseTx  = await contract.createSession(paramsHash, prep.worker, bytesToHex(encWorker), bytesToHex(encDisputer), prep.signature, BigInt(prep.expiry), { value: 0n });
+  prog('Waiting for session confirmation…');
+  const cseR   = await cseTx.wait();
+
+  let sessionId;
+  for (const log of cseR.logs) {
+    try { const p = iface.parseLog(log); if (p?.name === 'SessionCreated') { sessionId = p.args.sessionId; break; } } catch {}
+  }
+  if (sessionId == null) throw new Error('SessionCreated event not found');
+
+  let relayToken = null;
+  const tokDeadline = Date.now() + 30000;
+  while (Date.now() < tokDeadline && !relayToken) {
+    const tr = await fetch(AIVM_GATEWAY + '/api/sessions/' + sessionId + '/token', { headers: hdrs });
+    if (tr.ok) { const td = await tr.json(); if (td.token) { relayToken = td.token; break; } }
+    await sleep(1000);
+  }
+  if (!relayToken) throw new Error('Relay token not ready');
+
+  const chunks = [];
+  const ws = new WebSocket(AIVM_RELAY + '?token=' + encodeURIComponent(relayToken));
+  await new Promise((res, rej) => {
+    const t = setTimeout(() => rej(new Error('WebSocket timeout')), 15000);
+    ws.onopen  = () => { clearTimeout(t); res(); };
+    ws.onerror = () => { clearTimeout(t); rej(new Error('WebSocket error')); };
+  });
+  ws.onmessage = async ev => {
+    try {
+      const frame = JSON.parse(ev.data);
+      if (frame.payload) {
+        const blob = base64ToBytes(frame.payload);
+        const pt   = await aesDecryptResponse(sessionKey, blob);
+        chunks.push(new TextDecoder().decode(pt));
+      }
+    } catch {}
+  };
+
+  prog('Confirm job in Trust Wallet… (costs ~0.02 LCAI)');
+  const cipher = await aesEncryptPrompt(sessionKey, new TextEncoder().encode(prompt));
+  const br = await fetch(AIVM_GATEWAY + '/api/blobs', {
+    method: 'POST', headers: hdrs, body: JSON.stringify({ data: bytesToBase64(cipher) })
+  });
+  if (!br.ok) throw new Error('Blob upload failed');
+  const { blobHashes = [] } = await br.json();
+  if (!blobHashes.length) throw new Error('No blob hash returned');
+  const promptHash = '0x' + blobHashes[0].replace(/^0x/i, '').padStart(64, '0');
+
+  const sjTx = await contract.submitJob(sessionId, promptHash, { value: AIVM_JOB_FEE });
+  prog('AI is generating… (1-2 minutes)');
+  await sjTx.wait();
+
+  const jobCompletedTopic = ethers.id('JobCompleted(uint256,address,bytes32,bytes32)');
+  const deadline = Date.now() + 180000;
+  let done = false;
+  while (Date.now() < deadline && !done) {
+    await sleep(3000);
+    try {
+      const logs = await provider.getLogs({
+        address: AIVM_JOB_REG,
+        topics: [jobCompletedTopic],
+        fromBlock: 'latest'
+      });
+      if (logs.length) done = true;
+    } catch {}
+    if (chunks.length) done = true;
+  }
+  ws.close();
+  const result = chunks.join('').trim();
+  if (!result) throw new Error('No response from AIVM worker');
+  return result;
 }
 
 // ── FILE ENCRYPTION (local AES-256-GCM) ───────────────────────────
