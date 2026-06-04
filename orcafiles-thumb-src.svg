@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="400" height="240">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a1108"/>
+      <stop offset="100%" stop-color="#0d0d1a"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#c8860a"/>
+      <stop offset="100%" stop-color="#f0a500"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a6eb5"/>
+      <stop offset="100%" stop-color="#3a9fd5"/>
+    </linearGradient>
+    <linearGradient id="purple" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#6b21a8"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="240" fill="url(#bg)"/>
+
+  <!-- Subtle grid lines -->
+  <line x1="0" y1="60" x2="400" y2="60" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="0" y1="120" x2="400" y2="120" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="0" y1="180" x2="400" y2="180" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="100" y1="0" x2="100" y2="240" stroke="#ffffff05" stroke-width="1"/>
+  <line x1="200" y1="0" x2="200" y2="240" stroke="#ffffff05" stroke-width="1"/>
+  <line x1="300" y1="0" x2="300" y2="240" stroke="#ffffff05" stroke-width="1"/>
+
+  <!-- File cards - left column -->
+  <!-- Card 1: Organize Only -->
+  <rect x="24" y="32" width="100" height="76" rx="8" fill="#1e1a0e" stroke="#3a3010" stroke-width="1"/>
+  <circle cx="38" cy="47" r="5" fill="#6b6b6b"/>
+  <rect x="48" y="43" width="48" height="6" rx="3" fill="#4a4a4a"/>
+  <rect x="32" y="60" width="76" height="5" rx="2" fill="#2a2a2a"/>
+  <rect x="32" y="70" width="60" height="5" rx="2" fill="#2a2a2a"/>
+  <rect x="32" y="80" width="70" height="5" rx="2" fill="#2a2a2a"/>
+  <text x="32" y="100" font-family="sans-serif" font-size="9" fill="#6b6b6b">Organize Only</text>
+
+  <!-- Card 2: Encrypted - blue glow -->
+  <rect x="140" y="32" width="100" height="76" rx="8" fill="#0d1a2e" stroke="#1a4a7a" stroke-width="1.5"/>
+  <circle cx="154" cy="47" r="5" fill="url(#blue)"/>
+  <rect x="164" y="43" width="48" height="6" rx="3" fill="#2a4a6a"/>
+  <rect x="148" y="60" width="76" height="5" rx="2" fill="#1a3a5a"/>
+  <rect x="148" y="70" width="60" height="5" rx="2" fill="#1a3a5a"/>
+  <rect x="148" y="80" width="70" height="5" rx="2" fill="#1a3a5a"/>
+  <text x="148" y="100" font-family="sans-serif" font-size="9" fill="#3a9fd5">🔐 Encrypted</text>
+
+  <!-- Card 3: Backed Up - purple glow -->
+  <rect x="260" y="32" width="116" height="76" rx="8" fill="#1a0d2e" stroke="#5a1a9a" stroke-width="1.5"/>
+  <circle cx="274" cy="47" r="5" fill="url(#purple)"/>
+  <rect x="284" y="43" width="48" height="6" rx="3" fill="#3a2a5a"/>
+  <rect x="268" y="60" width="80" height="5" rx="2" fill="#2a1a4a"/>
+  <rect x="268" y="70" width="64" height="5" rx="2" fill="#2a1a4a"/>
+  <rect x="268" y="80" width="74" height="5" rx="2" fill="#2a1a4a"/>
+  <text x="268" y="100" font-family="sans-serif" font-size="9" fill="#a855f7">🛡️ Backed Up</text>
+
+  <!-- Gold accent bar -->
+  <rect x="0" y="128" width="400" height="2" fill="url(#gold)" opacity="0.5"/>
+
+  <!-- Bottom section: brand -->
+  <text x="24" y="165" font-family="sans-serif" font-size="26" font-weight="800" fill="white">OrcaFiles</text>
+  <text x="24" y="188" font-family="sans-serif" font-size="12" fill="#c8860a">Encrypted File Organizer · Powered by Lightchain</text>
+
+  <!-- Lock icon group -->
+  <rect x="24" y="200" width="56" height="22" rx="4" fill="#1a1108" stroke="#c8860a44"/>
+  <text x="30" y="215" font-family="sans-serif" font-size="11" fill="#c8860a">🔒 Secure</text>
+
+  <rect x="90" y="200" width="72" height="22" rx="4" fill="#1a1108" stroke="#3a9fd544"/>
+  <text x="96" y="215" font-family="sans-serif" font-size="11" fill="#3a9fd5">⛓ Blockchain</text>
+
+  <rect x="173" y="200" width="64" height="22" rx="4" fill="#1a1108" stroke="#a855f744"/>
+  <text x="179" y="215" font-family="sans-serif" font-size="11" fill="#a855f7">👨‍👩‍👧 Family</text>
+
+  <!-- Orca watermark -->
+  <text x="356" y="228" font-family="sans-serif" font-size="28" opacity="0.15">🐋</text>
+</svg>
