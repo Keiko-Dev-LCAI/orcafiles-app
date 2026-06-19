@@ -1282,6 +1282,12 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x:
 
 <!-- ethers.js v6 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<script type="module">
+  try {
+    const { EthereumProvider } = await import('https://esm.sh/@walletconnect/ethereum-provider@2.17.3');
+    window.WCEthereumProvider = EthereumProvider;
+  } catch(e) { console.warn('WalletConnect unavailable:', e); }
+</script>
 
 <script>
 'use strict';
@@ -1453,11 +1459,36 @@ async function walletAction() {
   else { await connectWallet(); }
 }
 
+let _wcProv = null;
+
+async function connectViaWalletConnect() {
+  if (!window.WCEthereumProvider) { toast('WalletConnect not loaded yet. Try again.', 'err'); return; }
+  try {
+    _wcProv = await window.WCEthereumProvider.init({
+      projectId: '3c6a0da53258912a28923198ddac3333',
+      chains: [9200], optionalChains: [1], showQrModal: true,
+      metadata: { name: 'OrcaFiles', description: 'Decentralized File Storage on Lightchain', url: 'https://orcafiles.ai', icons: ['https://orcafiles.ai/orca-icon.png'] },
+      rpcMap: { 9200: 'https://rpc.mainnet.lightchain.ai' }
+    });
+    await _wcProv.enable();
+    window.ethereum = _wcProv;
+    await doConnect();
+  } catch(e) {
+    if (!e || e.message?.includes('User rejected') || e.message?.includes('rejected') || e.code === 4001) return;
+    toast('WalletConnect failed. Try a different wallet.', 'err');
+  }
+}
+
 async function connectWallet() {
   if (!window.ethereum) {
-    toast('Please install Trust Wallet to connect.', 'err', 6000);
+    if (window.WCEthereumProvider) { await connectViaWalletConnect(); return; }
+    toast('No wallet found. Install a browser wallet extension or use WalletConnect.', 'err', 6000);
     return;
   }
+  await doConnect();
+}
+
+async function doConnect() {
   try {
     el('btn-wallet-action').textContent = 'Connecting…';
     const prov = new ethers.BrowserProvider(window.ethereum);
@@ -1477,6 +1508,7 @@ async function connectWallet() {
 }
 
 function disconnectWallet() {
+  if (_wcProv) { try { _wcProv.disconnect(); } catch {} _wcProv = null; }
   S.addr = null; S.provider = null; S.signer = null;
   saveWallet();
   updateWalletUI();
